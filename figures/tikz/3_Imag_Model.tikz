@@ -1,0 +1,70 @@
+%\draw[-] (\k) edge (\b);
+
+\begin{tikzpicture}
+
+\def \ST {0}
+\def \UJ {1}
+
+\ifthenelse{\UJ=1}{
+	\pgfmathtruncatemacro{\ST}{1}
+}
+
+\def \W {4}
+\pgfmathsetmacro{\Winmax}{\W*2}
+\pgfmathsetmacro{\Winlen}{\Winmax+1}
+
+\foreach \i in {0,...,\Winmax}{
+	\foreach \j in {0,...,\Winmax}{
+
+		% / d f
+		% b c e
+		% g a k
+	
+		\pgfmathtruncatemacro{\k}{\i+\j*\Winlen}
+		\pgfmathtruncatemacro{\a}{\k-1}
+		\pgfmathtruncatemacro{\b}{\k-2-\Winlen}
+		\pgfmathtruncatemacro{\c}{\k-1-\Winlen}
+		\pgfmathtruncatemacro{\d}{\k-1-2*\Winlen}
+		\pgfmathtruncatemacro{\e}{\k-\Winlen}
+		\pgfmathtruncatemacro{\f}{\k-2*\Winlen}
+		\pgfmathtruncatemacro{\g}{\k-2}
+		
+		\node (\k) at (\i/2,-\j/2) [circle,draw] {};
+		
+		\ifthenelse{\i>0}{
+			\draw[-] (\k) edge (\a);
+			
+			\ifthenelse{\j>0}{
+				\draw[-] (\k) edge (\e);
+				
+				\ifthenelse{\UJ=1}{
+					\draw[-] (\k) edge (\c);
+					\draw[-] (\a) edge (\e);
+				}		
+				
+				\ifthenelse{\ST=1}{
+					\ifthenelse{\i>1}{
+						\draw[-] (\k) edge (\b);
+						\draw[-] (\e) edge (\g);				
+					}
+
+					\ifthenelse{\j>1}{
+						\draw[-] (\k) edge (\d);
+						\draw[-] (\a) edge (\f);				
+					}
+				
+				}
+			}
+		}
+		{
+			\ifthenelse{\j>0}{
+				\draw[-] (\k) edge (\e);
+			}
+			
+		}
+		
+	}
+}
+
+
+\end{tikzpicture}

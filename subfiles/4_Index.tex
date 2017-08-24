@@ -1,0 +1,524 @@
+\documentclass[../main/These_Mathias_Paget.tex]{subfiles}
+
+%----------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------
+
+%----------------------------------------------------------------------------------------
+\chapter{Estimation de confiance dans un processus d'optimisation discrète}
+%%----------------------------------------------------------------------------------------
+
+	La solution d'un problème image est souvent formulée comme une affectation minimale vis à vis d'une énergie. Cette énergie est généralement issue d'un modèle qui perd en entrée des données et intègre éventuelles des a priori. La solution est alors une information ponctuelle dans un espace d'autant de dimension que de paramètres dans l’énergie. Cette solution alors résume toute l'information issue des données au risque de réduire excessivement la quantité d'information d'autant plus que plusieurs étapes de traitements sont nécessaires pour arriver aux résultats finals. Nous considérerons dans cette partie uniquement des énergies comme les -log de la probabilité a posteriori.
+	
+	Nous nous intéressons dans cette partie à des caractérisations de la solution en analysant la forme de l’énergie (Partie~\ref{s:incert_conf}). Cette caractérisation peut être volumineuse et coûteuse en calcul, ainsi nous cherchons à dériver des indices permettant de caractériser la solution en exploitant le processus d'optimisation de la solution. Deux indices sont proposées, l'un dans la contexte de la programmation dynamique (DP) (Partie~\ref{s:indice_DP}) et l'autre dans le contexte de la coupure de graphe (GC) (Partie~\ref{s:indice_GC}). La question est d'identifier ce que caractérise ces indices (Partie~\ref{s:eval_indice}) et comment les intégrer à une chaîne de traitement (Partie~\ref{s:application_index}).
+	
+
+\section{Incertitude et Confiance dans la solution}
+\label{s:incert_conf}
+
+\subsection{Estimation de l'incertitude}
+
+%L'incertitude est une mesure de la dispersion d'une variable. Elle est définie comme l'inverse de la variance.
+%\begin{equation}
+%	\mathbb{V} = \int_{-\inf}^{\inf}{  }
+%\end{equation}
+
+
+Dans le cas gaussien, la connaissance de la solution et de la matrice de covariance donne une connaissance complète de l’énergie. La variance d'une variable $X$ qui soit une loi de probabilité de densité $p(x)$.
+%\begin{equation}
+%	\mathbb{V} = \int_{-\inf}^{\inf}{  }
+%\end{equation}
+
+\subsubsection{Dans le cas gaussien continu}
+
+Dans le cas d'une distribution de probabilité gaussienne, la notion d'incertitude est directement reliée à la matrice de covariance de la probabilité. De plus la matrice de covariance a posteriori peut se déduire de la dérivée seconde du modèle. La précision est alors défini comme l’inverse de la matrice de covariance. Lorsque le modèle dérive d'une probabilité gaussienne, l'énergie est quadratique et l'incertitude sur la solution peut être calculé par propagation de variance. Soit $\boldsymbol{\omega}$ le vecteur des observations et $\boldsymbol{\theta}$ un vecteur de paramètre de taille $n$, liées par la relation
+\begin{equation}
+\boldsymbol{\theta} = \boldsymbol{\omega}
+\end{equation}
+avec $\boldsymbol{\omega}$  suivant une gaussienne de biais $\boldsymbol{\bar{\omega}}$ et de covariance $\Sigma_{\omega}$. On suppose que la matrice de covariance est inversible et on peut définir la matrice de précision $P_{\omega} = \Sigma_{\omega}^{-1}$. La probabilité des paramètres sachant les observation s'écrit
+\begin{equation}
+P(\boldsymbol{\theta}|\boldsymbol{\omega}) \propto  e^{-\frac{1}{2}(\boldsymbol{\theta}-\boldsymbol{\bar{\omega}})^{t}P_{\boldsymbol{\omega}}(\boldsymbol{\theta}-\boldsymbol{\bar{\omega}})}
+\end{equation}
+Considérons maintenant de $\theta$ possède une probabilité a priori elle-aussi gaussienne définie par une matrice de précision $P_\theta$ et un biais $\boldsymbol{\bar{\theta}}$,
+\begin{equation}
+P(\boldsymbol{\theta}) \propto e^{-\frac{1}{2}(\boldsymbol{\theta}-\boldsymbol{\bar{\theta}})^{t}P_\theta(\boldsymbol{\theta}-\boldsymbol{\bar{\theta}})}
+\end{equation}
+maximiser la probabilité a posteriori revient à minimiser l’énergie
+\begin{equation}
+E(\boldsymbol{\theta})= (\boldsymbol{\theta}-\boldsymbol{\bar{\omega}})^{t} P_\omega (\boldsymbol{\theta}-\boldsymbol{\bar{\omega}}) + (\boldsymbol{\theta}-\boldsymbol{\bar{\theta}})^{t}P_\theta(\boldsymbol{\theta}-\boldsymbol{\bar{\theta}})
+\end{equation}
+Cette énergie est convexe, il suffit donc d’annuler ses dérivées pour obtenir le minimum global ${\theta}_0$, 
+\begin{equation}
+P_\omega(\boldsymbol{{\theta}_0}-\boldsymbol{\bar{\omega}}) + P_\theta(\boldsymbol{{\theta}_0}-\boldsymbol{\bar{\theta}}) = \boldsymbol{0}
+\end{equation}
+Dans le cas où $P_\omega + P_\theta$ est inversible, la solution est unique,
+\begin{equation}
+\boldsymbol{{\theta}_0} = (P_\omega + P_\theta)^{-1}(  P_\omega \boldsymbol{\bar{\omega}} + P_\theta\boldsymbol{\bar{\theta}})
+\end{equation}
+On considère que le biais sur les observations $\boldsymbol{\bar{\omega}}$ est aléatoire de précision $P_\omega$ et que le biais sur les paramètres $\boldsymbol{\bar{\theta}}$ n'est pas aléatoire. Par propagation on obtient la variance sur le résultat,
+\begin{equation}
+\begin{aligned}
+(P_\omega + P_\theta)\Sigma_{{\theta}_0} (P_\omega + P_\theta) & =  P_\omega  \Sigma_{\omega} P_\omega \\
+\Sigma_{{\theta}_0} &= (P_\omega + P_\theta)^{-1} P_\omega (P_\omega + P_\theta)^{-1} \\
+P_{{\theta}_0} &= (P_\omega + P_\theta) \Sigma_\omega (P_\omega + P_\theta)
+\end{aligned}
+\end{equation}
+Ainsi, dans le cas d'une probabilité a posteriori gaussienne, il existe une expression explicite de la précision sur le résultat en fonction de la précision sur les données et de la précision de l'a priori sur les paramètres. Il est à noter que cette précision ne dépend ni des biais, ni de la solution $\boldsymbol{\theta_0}$.
+
+\subsubsection{Approximation locale}
+
+Dans le cas général, la variance sur tout l'espace peut être trop coûteux. On préfère calculer la covariance d'une approximation gaussienne local. Cette matrice correspond à la matrice hessien de la solution calculée localement.
+
+\subsubsection{Estimation par méthode de Monte Carlo(MC)}
+
+\subsection{De la notion d'indice de confiance}
+
+Il est très fréquent que le modèle du problème image ne soit pas quadratique. Dans un tel cas, il n'y a plus de lien direct entre l'incertitude du la solution, la matrice covariance a posteriori. Ainsi, la notion d'incertitude n'est pas clairement défini. De nombreuses proposition ont été faites en vue de caractériser la solution.
+
+Le calcul de la dérivée seconde en la solution permet de caractériser la convexité locale de l’énergie. On peut alors calculer la matrice de covariance de la gaussienne qui approxime localement l’énergie. Cette matrice est appelée information de Fisher.
+
+La matrice de covariance a posteriori peut elle-aussi être estimée par méthode Monte-Carlo. La méthode de Monte-Carlo consiste à étudier la sortie d'un système en simulant des données en entrée. A partir de l'hypothèse de bruit faite dans le modèle, des données simulées sont générés et on estime la covariance sur les sorties du système. Dans le cas où l’énergie ne présente pas de plateau, l'estimateur converge vers la matrice de covariance. Se pose la question de la signification de la matrice covariance dans un cas non-gaussien. Elle peut être vu comme l’intégrale des matrices de Fisher pondérée par la probabilité a priori.
+
+prédicteur d'erreur
+
+confiance dans le modèle
+
+\subsubsection{Faisabilité de la la matrice}
+
+La matrice de covariance est de taille $n \times n$. Pour des problèmes où le nombre de variables est limitées, comme par exemple pour l'estimation d'une pose de caméra, une telle approche est envisageable. Cependant pour des problèmes avec un nombre de paramètre de l'ordre de million, comme dans le cas de la reconstruction stéréoscopique, cette approche ne peut pas être mise en pratique.
+
+
+\section{Proposition d'indice de confiance par programmation dynamique}
+\label{s:indice_DP}
+
+\section{Proposition d'indice de confiance par coupure de graphe}
+\label{s:indice_GC}
+
+La coupure de graphe permet la résolution d'un problème exprimé en fonction de variables binaires. Nous nous limitons ici aux graphes d'ordre 2 sous-modulaires de posiforme,
+\begin{equation}
+			E(\boldsymbol{x})= k + \sum_i{c_{si}x_i} + \sum_i{c_{it}\bar{x}_i} + \sum_{i \neq j}{ c_{ij}x_i\bar{x}_j }.
+\end{equation}
+chaque variable booléenne $x$ étant représentés par un site dans le graphe. A l'issue du possage de flot, les sites peuvent être en trois catégories : les sites atteignables depuis la sources, les sites atteignables depuis le puits, et les sites non-atteignables correspondant respectivement aux sous-ensembles de variables $ \boldsymbol{x}_\mathcal{S}$, $\boldsymbol{x}_\mathcal{T}$ et $\boldsymbol{x}_{?}$. Les affectations
+\begin{equation}
+\begin{aligned}
+\boldsymbol{x}_\mathcal{S} &= \boldsymbol{0} \\
+\boldsymbol{x}_\mathcal{T} &= \boldsymbol{1} \\
+\boldsymbol{x}_\mathcal{?} = \boldsymbol{0} \; & ou \; \boldsymbol{x}_\mathcal{?} = \boldsymbol{1}
+\end{aligned}
+\end{equation}
+sont minimale. Au delà de ces deux affectations binaires, nous cherchons à caractériser la confiance dans ces affectations.
+
+
+\subsection{Indice binaire}
+
+Les variables $\boldsymbol{x}_\mathcal{S}$ et $\boldsymbol{x}_\mathcal{S}$ possèdent les mêmes affectations dans tous les minima globaux du problème contrairement aux variables  $\boldsymbol{x}_\mathcal{?}$. Un indice d’ambiguïté binaire $Amb$ peut être définit
+\begin{equation}
+\begin{aligned}
+Amb_i & = 1 \; \text{si} \; x_i \in \boldsymbol{x}_\mathcal{S} \cup \boldsymbol{x}_\mathcal{T} \\
+Amb_i &= 0 \; \text{sinon}.
+\end{aligned}
+\end{equation}
+
+\subsection{Indice de stabilité}
+
+Pour définir un indice qui ne caractérise pas seulement l’ambiguïté de la solution mais sa stabilité. Nous définissons un indice de stabilité de la manière suivante
+\begin{equation}
+Index_i = \mid \min_{\boldsymbol{x} | x_i =0}{E(\boldsymbol{x})} - \min_{\boldsymbol{x} | x_i =1}{E(\boldsymbol{x}) \mid}
+\end{equation}
+Si $x_i \in \boldsymbol{x}_{?}$ alors $Index_i=0$ comme cest le cas pour l'indice d’ambiguïté. Une interprétation de l'indice est la valeur minimale du lien unaire nécessaire pour faire changer un site d'affectation. Une solution pour calculer cet indice est de réaliser le poussage de flot sur le problème initial. Puis pour chaque variable $x_i$ de $\boldsymbol{x}_\mathcal{S}$ réaliser un poussage de flot avec la contrainte $x_i=1$ et inversement pour chaque variable $x_i$ de $\boldsymbol{x}_\mathcal{T}$ réaliser un poussage de flot avec la contrainte $x_i=0$, soit $1+card(\mathcal{S} \cup \mathcal{T})$ poussages de flot.A l'issue du poussage de flot, la posiforme associée au graphe est récrite sous la forme,
+\begin{equation}
+			E(\boldsymbol{x})= K + Res(\boldsymbol{x})
+\end{equation}
+où $K$ est le flot maximal et $Res$ la posiforme résiduelle et $\boldsymbol{x}^0$ une affectation minimale. Ainsi l'indice s'écrit
+\begin{equation}
+Index_i = \min_{\boldsymbol{x} | x_i = \bar{x}^{0}_i}{Res(\boldsymbol{x})}
+\end{equation}
+La résiduelle $Res$ peut se réparer en trois termes
+\begin{equation}
+\begin{aligned}
+			Res(\boldsymbol{x}) & = Res_\mathcal{S}(\boldsymbol{x}_\mathcal{S}) + Res_\mathcal{T}(\boldsymbol{x}_\mathcal{T}) + Reste(\boldsymbol{x}) \\
+			Res_\mathcal{S}(\boldsymbol{x}_\mathcal{S}) &= \sum_{x_i \in \boldsymbol{x}_\mathcal{S}}{c_{si}x_i} + \sum_{(x_i,x_j) \in \boldsymbol{x}^{2}_\mathcal{S}}{ c_{ij}x_i\bar{x}_j} \\
+			Res_\mathcal{T}(\boldsymbol{x}_\mathcal{T}) &=\sum_{x_i \in \boldsymbol{x}_\mathcal{T}}{c_{it}\bar{x}_i} + \sum_{(x_i,x_j) \in \boldsymbol{x}^{2}_\mathcal{T}}{ c_{ij}x_i\bar{x}_j} \\
+			Reste(\boldsymbol{x}) &= \sum_{ x_i \not\in \boldsymbol{x}_\mathcal{T}, x_j \in \boldsymbol{x}_\mathcal{T}}{ c_{ij}x_i\bar{x}_j} + \sum_{ x_i \not\in \boldsymbol{x}_\mathcal{T}, x_j \in \boldsymbol{x}_\mathcal{?} }{ c_{ij}x_i\bar{x}_j}
+\end{aligned}
+\end{equation}
+
+Si $\boldsymbol{x}_\mathcal{T} \cup \boldsymbol{x}_\mathcal{?}=\boldsymbol{1}$ alors $Res_\mathcal{T}(\boldsymbol{x}_\mathcal{T})=Reste(x)=0$ sans impacter le terme $Res_\mathcal{S}$ et inversement si $\boldsymbol{x}_\mathcal{S} \cup \boldsymbol{x}_\mathcal{?}=\boldsymbol{0}$ alors $Res_\mathcal{S}(\boldsymbol{x}_\mathcal{S})=Reste(x)=0$.
+Pour simplifier par la suite, la posiforme qui correspond au graphe coté puits est réécrite comme celle d'un graphe coté source,
+\begin{equation}
+\overline{Res}_\mathcal{T}(\boldsymbol{x}_\mathcal{T}) = \sum_{x_i \in \boldsymbol{x}_\mathcal{T}}{c_{it}x_i} + \sum_{(x_i,x_j) \in \boldsymbol{x}^{2}_\mathcal{T}}{ c_{ji}x_i\bar{x}_j}
+\end{equation}
+Les capacités vers le puits sont transformées en capacité avec la source. Les capacités des arcs entre deux noeuds sont inversées. Ainsi le problème initial devient,
+\begin{equation}
+\begin{aligned}
+Index_i &= \min_{\boldsymbol{x} | x_i=1}{Res_\mathcal{S}(\boldsymbol{x})} \; \text{si} \; x_i \in \boldsymbol{x}_\mathcal{S} \\
+Index_i &= \min_{\boldsymbol{x} | x_i=1}{\overline{Res}_\mathcal{T}(\boldsymbol{x}) \; \text{si} \; x_i \in \boldsymbol{x}_\mathcal{T}} \\
+Index_i &= 0 \;\; \text{sinon}
+\end{aligned}
+\end{equation}.
+
+La borne maximale est très grossière car elle n'exploite pas la structure en réseau du graphe. La borne minimale 
+
+
+
+%\begin{algorithm}
+%\begin{algorithmic}
+%\STATE $Maxflow(E)$
+%\FORALL{$x \in S$}
+%\STATE $Index_x=c_{sx}$
+%\STATE $c_{sx}=0$
+%\STATE $(subflow,x_s,x_t,Res) = Res_s + \infty*\bar{x}$
+%\STATE $subflot=Maxflow(New_E)$
+%\STATE $Index_x = Index_x + subflow$
+%\ENDFOR
+%\end{algorithmic}
+%\caption{My algo}
+%\end{algorithm}
+
+\subsection{Adaptation du problème de poussage de flot}
+
+Pour rappel le poussage de flot s'écrit comme la maximisation de la borne $K$ puis de la minimisation selon les variables $\boldsymbol{x}$,
+\begin{equation}
+			\min_{\boldsymbol{x}} E(\boldsymbol{x})=\min_{\boldsymbol{x}} \max_{K}{K + Res(\boldsymbol{x})}
+\end{equation}
+La maximisation de $K$ est réalisée par réécriture de la posiforme en utilisant les sommes alternées
+\begin{equation}
+			x_0 + \sum_{i=0}^{n-1} \bar{x_i}x_{i+1} + x_n = 1 + \sum_{i=0}^{n-1} x_i\bar{x}_{i+1} 
+\end{equation}
+
+L'indice de stabilité peut s'écrire comme la maximisation d'une borne
+\begin{equation}
+Index_i = \min_{\boldsymbol{x} | x_i=1}{Res_\mathcal{S}(\boldsymbol{x})} = \min_{\boldsymbol{x} | x_i=1}{\sum_{x_j \in \boldsymbol{x}_\mathcal{S}}{c_{sj}x_j} + \sum_{(x_j,x_k) \in \boldsymbol{x}^{2}_\mathcal{S}}{c_{ij}x_j\bar{x}_k}}
+\end{equation}
+
+\begin{equation}
+	c_{si} \leq  {Res_\mathcal{S}(\boldsymbol{x})}_{|x_i=1} = c_{si} +  {res^{i}_\mathcal{S}(\boldsymbol{x})}_{|x_i=1}
+\end{equation}
+
+Maximiser la borne inférieure $c_{si}$ grâce à l'identité 
+\begin{equation}
+x_0 + \sum_{i=0}^{n-1} \bar{x_i}x_{i+1} = \sum_{i=0}^{n-1} x_i\bar{x}_{i+1} + x_n
+\end{equation}
+
+Soient les trois catégories de sites : $A_i$ les sites qui atteignent le site $I$, $S_i$ les sites atteint par la source sans passer par le site $I$ et $R_i$ les sites ne faisant parti ni de $A_i$ et ni de $S_i$. Quand $ A_i \cap S_i \neq I$, une identité peut être trouvée et la borne est augmenté jusqu'à ce que $A_i \cap S_i = I$. Alors la posiforme résiduelle peut s'écrire,
+\begin{equation}
+\begin{aligned}
+{res^{i}_\mathcal{S}(\boldsymbol{x})} &= \sum_{J \in S_i} c_{sj}x_j +  \sum_{(J,K) \in S^2_i} c_{jk}\bar{x}_jx_k + \sum_{(J,K) \in (R_i,S_i)} c_{jk}\bar{x}_jx_k \\ &+ \sum_{(J,K) \in A^2_i} c_{jk}\bar{x}_jx_k + \sum_{(J,K) \in (A_i,R_i)} c_{jk}\bar{x}_jx_k \\ & + \sum_{(J,K) \in R^2_i} c_{jk}\bar{x}_jx_k
+\end{aligned}
+\end{equation}
+Affecter les sites $S_i$ à la source annule les trois premiers termes sans impacter les autres terme, de même affecter les sites $A_i$ au puits annuler les deux termes suivants sans impact sur les autres termes. Le dernier terme s'annule les affectant les sites $R_i$  tous à la source ou tous au puits. Ainsi l'affectation $\boldsymbol{x}$ telle que
+annule la posiforme résiduelle du graphe résiduel. Ainsi la valeur de l'indice en $I$ est égale à la capacité de la source vers $I$.
+\begin{equation}
+Index_i = c_{si} + res^{i}_\mathcal{S}(\boldsymbol{x^0}) = c_{si}
+\end{equation}
+
+\subsection{Approximation de l'indice}
+
+La calcul de l'indice peut être coûteux en calcul. Il est donc intéressant de pouvoir approximer deux indices à l'aide d'algorithmes plus simples. On cherchons donc à encadrer la valeurs d'indice. 
+\begin{equation}
+\begin{aligned}
+Res(x) &= c_ix_i + \sum_{x_j \in x_s / x_i} c_{ij}\bar{x}_ix_j + c_{ji}\bar{x}_jx_i + \sum_{x_j,x_k \in {x_s/x_i}^2}{ c_{ij}\bar{x}_jx_k} \\
+Index_i &= c_i + \min_{x / x_i} \sum_{x_j \in x_s / x_i} c_{ji}\bar{x}_j +  \sum_{(x_j,x_k) \in {x_s/x_i}^2}{ c_{ij}\bar{x}_jx_k}
+\end{aligned}
+\end{equation}
+Comme toute les capacités sont positives on obtient l'encadrement suivant,
+\begin{equation}
+c_{si} \leq Index_i \leq  c_{si} + \sum_{(x_j,x_k) \in {x_s/x_i}^2}{c_{ji}}
+\end{equation}
+
+\subsubsection{Borne Minimale}
+
+La calcul de l'indice étant coûteux en calcul, dans algorithme plus simple permettent de calculer des bornes minimales. Nous partons de la borne minimale définit précédemment.
+\begin{equation}
+c_{si} \leq Index_i
+\end{equation}
+Dans les algorithmes de poussage de flot et notamment l'algorithme Maxflow, une arbre est construit depuis la source et depuis le puis. Cette arbre peut être vu comme un déplient du graphe en un graphe simple. Le calcul de l'indice dans cette structure est aisé, il suffit de propager de proche en proche un préflot. Il s'agit donc d’ignorer certaines capacités du graphe dans le calcul de l'indice, ce qui amène à une borne minimale de l'indice.
+\begin{equation}
+\min_{(j,k) \in P_{s->i}}{c_{jk}} \leq Index_i
+\end{equation}
+où $P_{s->i}$ est le chemin qui va de la source au nœud $i$. Si l'arbre privilégie les chemins directs dans le cas où le point est directement lié à la source, alors
+\begin{equation}
+c_{si} \leq \min_{(j,k) \in P_{s->i}}{c_{jk}} \leq Index_i
+\end{equation}
+Parmi les arbres possibles, on peut construire l'arbre optimal qui maximise chaque borne minimale. Néanmoins, cette approche a l'inconvénient qu'un seul flux entrant est pris en compte par nœud.
+
+
+\subsection{Extension aux problèmes multi-label}
+
+Deux le cas d'une énergie multi-label sous un a priori de régularisation convexe d'ordre 1, une construction de graphe permet d'obtenir le minimum global d'un tel problème.
+	\begin{equation}
+		\label{eq:Emulti}
+			%
+				E(\boldsymbol{l})= \sum_{i \in I}{D_i(l_i)} + \sum_{i<j}{R(l_i,l_j)}
+			%
+	\end{equation}
+Chaque variable discrète $l^i$ est représentée par un vecteur de variable binaires $\boldsymbol{x}^i$. La valeur d'un label est codée de la manière suivante :
+\begin{equation}
+  l^i = l \Leftrightarrow \left\{
+      \begin{aligned}
+	x^i_k = 1 & \text{ si } k \geq l \\
+	x^i_k = 0 & \text{ sinon}
+      \end{aligned}
+    \right.
+\end{equation}
+L'indice d'écrit
+\begin{equation}
+Index_{i,k} =  \mid \min_{\boldsymbol{l} | x^i_k =1}{E(\boldsymbol{l})} - \min_{\boldsymbol{l} | x^i_k =0}{E(\boldsymbol{l}) \mid} = \mid \min_{\boldsymbol{l} | l^i < k}{E(\boldsymbol{l})} - \min_{\boldsymbol{l} | l^i \geq k }{E(\boldsymbol{l}) \mid}
+\end{equation}
+Soit $E_{opt}$ la valeur de l’énergie optimale et $l_{opt}$ une affectation optimale
+\begin{equation}
+Index_{i,k} =  \left\{
+      \begin{aligned}
+	& \min_{\boldsymbol{l} | l^i > l^i_{opt}}{E(\boldsymbol{l})} - E_{opt} & \text{ si } k > l^i_{opt} \\
+	& \min_{\boldsymbol{l} | l^i < l^i_{opt}}{E(\boldsymbol{l})} - E_{opt} & \text{ si } k < l^i_{opt} \\
+	& 0 & \text{ sinon}
+      \end{aligned}
+    \right.
+\end{equation}
+
+
+\begin{table}
+\centering
+\begin{tabular}{ccccc|c}
+	$x_0$ & $x_1$ & $x_2$ & $x_3$ & $x_4$ & $l$ \\
+	\hline
+	1 & 1 & 1 & 1 & 1 & $0$ \\
+	0 & 1 & 1 & 1 & 1 & $1$ \\
+	0 & 0 & 1 & 1 & 1 & $2$ \\
+	0 & 0 & 0 & 1 & 1 & $3$ \\
+	0 & 0 & 0 & 0 & 1 & $4$ \\
+	0 & 0 & 0 & 0 & 0 & $5$ \\
+\end{tabular}
+	\caption{Affectation réalisable et valeurs de label ($L=\left\{0,5\right\}$)}
+	\label{tab:aff_ish}
+\end{table}
+
+
+
+\section{Comment évaluer un indice de la variance de la solution}
+\label{s:eval_indice}
+
+Dans cette sous section, nous allons voir comment évaluer un estimateur de la variance de la solution à l'aide d'une solution du problème et de la vérité de la solution.
+
+La solution du problème est une occurrence de la loi de probabilité dont nous cherchons à estimer l'incertitude. Une approche est de d'estimer la densité de probabilité de la solution puis d'estimer la probabilité des écarts observés à la vérité terrain. Cette probabilité de grande dimension pouvant être très complexe et le nombre d'observation sur cette dernière étant très limité, il est nécessaire d'introduire un certain nombre d'hypothèse sur cette probabilité. Tous d'abord nous considérons que les variables du problème sont indépendantes. Soit $n$ le nombre d’élément de la vérité, le problème revient à estimer $n$ distributions de probabilité uni-variées. Ensuite, nous considérons que la solution n'est pas biaisée c'est à dire que l'espérance de la solution est égale à la vérité, notée $\mu$. 
+\begin{equation}
+  \mathbb{E}(\dot{s}_i) = \mathbb{E}(\hat{s}_i) =  \mu_i   \; , \;  \forall i
+\end{equation}
+Il est donc possible de revenir à des distributions centrées en retranchant la vérité à chaque valeur. Enfin nous considérons que chaque distribution est paramétrée par une variance $\sigma$. Ainsi la probabilité de la solution $p^s(\boldsymbol{s})$ s'écrit
+\begin{equation}
+p^s(\boldsymbol{s}) = \prod_{i=1}^{n}{p^s_i(e_i|\sigma_i)}
+\end{equation}
+où $e_i$ est l'écart à la vérité et $p^s_i$ une distribution centré d'écart-type $\sigma_i$.
+
+Le critère de confiance que l'indice d'incertitude $\hat{\sigma}_i$ est défini comme la probabilité des écarts observées à la vérité terrain $p^s(\boldsymbol{e}))$ en considérant l'écart type de chaque distribution égal à l'indice d'incertitude.
+
+Par la suite nous considérerons des distributions gaussiennes. Nous posons l’énergie égale au -log de la probabilité
+\begin{equation}
+E(\boldsymbol{e}|\boldsymbol{\sigma}) = \frac{n}{2}log(2\pi)  + \sum_i{log(\sigma_i)} + \sum_i\frac{e_i^2}{2 \sigma_i^2}
+\end{equation}
+
+Pour rappel, l'entropie de Shannon d'une gaussienne d'écart-type $\sigma$ est
+\begin{equation}
+Ent_\sigma = Ent( p(x|\sigma) ) = \frac{1}{2}(log(2\pi)+1) + log(\sigma).
+\end{equation}
+ainsi l’énergie s’écrit
+\begin{equation}
+E(\boldsymbol{e}|\boldsymbol{\sigma}) = \sum_i{Ent_{\sigma_i}}  + \frac{1}{2}  \sum_i \Big( \frac{e_i^2}{\sigma_i^2} - 1 \Big)
+\end{equation}
+
+\subsection{Effet d'une erreur d'estimation de l'écart-type}
+L'erreur d'estimation est paramétré par le ratio $k$ de la variance estimée sur la variance vraie.
+\begin{equation}
+k = \frac{\hat{\sigma}_i^2}{\dot{\sigma}_i^2}
+\end{equation}
+L’énergie s'écrit alors 
+\begin{equation}
+E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}}) = \sum_i{Ent_{\dot{\sigma}_i}}  + \frac{1}{2}  \sum_i \Big( k_i \frac{e_i^2}{\dot{\sigma}_i^2} - 1 -log(k_i)\Big)
+\end{equation}
+
+\subsubsection{Espérance et Variance  de l’énergie}
+
+Le critère utilisé consiste à estimer la probabilité d'une valeur d’écart-type sachant un tirage de cette distribution de probabilité.
+\begin{equation}
+\begin{aligned}
+\mathbb{E}(E(\boldsymbol{e}|\boldsymbol{\sigma})) &= \int_{\boldsymbol{e}} p(\boldsymbol{e}| \boldsymbol{\dot{\sigma}}) E(\boldsymbol{e}|\boldsymbol{\sigma}) \, \mathrm d\boldsymbol{e} \\
+&= \int_{\boldsymbol{e}} -p(\boldsymbol{e}| \boldsymbol{\dot{\sigma}}) log( p(\boldsymbol{e}|\boldsymbol{\sigma})) \, \mathrm d\boldsymbol{e} \\
+&= \sum_{i}{\int_{e_i} -p(e_i|\dot{\sigma}_i)log(p(e_i|\sigma_i)) \mathrm de_i} \\
+&= \sum_{i}{\mathbb{E}(E_i(e_i|\sigma_i)))}
+\end{aligned}
+\end{equation}
+où les $E_i$ est l’énergie défini pour la variable $i$. Du fait de l'indépendance des variables, on peut étudier indépendamment l'effet de chaque variable sur l’espérance de l'énergie.  de chaque sous énergie est
+\begin{equation}
+\mathbb{E}(E_i(e_i|\hat{\sigma}_i) = Ent_{\dot{\sigma}_i} + \frac{1}{2}( k_i -1 -log(k_i))
+\end{equation}
+L'espérance est minimale lorsque $k_i=1$ c'est à dire que l'écart-type est fixé à la valeur vraie ; l’espérance de l'énergie est alors égale à l'entropie de la distribution vraie.
+\begin{equation}
+\mathbb{E}(E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}})) = \sum_{i}{ Ent_{\dot{\sigma}_i}} + \frac{1}{2}\sum_{i}( k_i -1 - log(k_i))
+\end{equation}
+Ainsi l'impact d'un erreur d'un facteur $k_i$ sur l'espérance de l’énergie est donnée par
+\begin{equation}
+\frac{\partial \mathbb{E}(E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}}))}{\partial k_i} = \frac{1}{2}( 1 - \frac{1}{k_i})
+\end{equation}
+Les variances étant indépendantes, on applique la loi de composition des variances
+\begin{equation}
+\mathbb{V}(E(\boldsymbol{e}|\boldsymbol{\sigma})) = \sum_{i}{\mathbb{V}(E_i(e_i|\sigma_i)))} = \frac{1}{2}\sum_{i}{k_i^{2}}
+\end{equation}
+
+\subsubsection{Facteur d’Échelle}
+Soit $\kappa$ un facteur sur les coefficients $\boldsymbol{k}$ et $\dot{\kappa}$ celui qui minimise l’espérance de l’énergie alors
+\begin{equation}
+\dot{\kappa} = argmin_{k}({\mathbb{E}(E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}}/\sqrt{\kappa}))}) = \frac{n}{\sum_{i}k_i} = \frac{1}{m_A(\boldsymbol{k})}
+\end{equation}
+où $m_A$ est la moyenne arithmétique, ce qui donne l’espérance
+\begin{equation}
+\begin{aligned}
+\mathbb{E}(E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}}/\sqrt{\dot{\kappa}})) &= \sum_iEnt_{\dot{\sigma}_i} + \frac{1}{2}\sum_{i}( log(\dot{\kappa}) - log(k_i)) \\
+&= \sum_iEnt_{\dot{\sigma}_i} + \frac{1}{2} log \bigg(\frac{m_A(\boldsymbol{k})}{m_G(\boldsymbol{k})}\bigg)
+\end{aligned}
+\end{equation}
+où $m_G$ est la moyenne géométrique et la variance
+\begin{equation}
+\mathbb{V}(E(\boldsymbol{e}|\boldsymbol{\sigma}/\sqrt{\dot{\kappa}})) =  1/2
+\end{equation}
+
+\subsection{Probabilité des indices sachant les écarts observés}
+Dans la pratique nous ne disposons pas de la loi de probabilité de la solution mais seulement d'un tirage cette loi et d'une vérité. Les écart entre le tirage de la solution et la vérité sont notés $\boldsymbol{e'}$. Nous rappelons que  avons fait l'hypothèse que chaque écart suit une loi gaussienne centrée indépendante.
+
+\subsubsection{Indice optimal}
+Pour un vecteur d’écart $\boldsymbol{e'}$, l'indice qui minimise la probabilité $\hat{\sigma}^{opt}$
+\begin{equation}
+\frac{\partial E(\boldsymbol{e}|\boldsymbol{\sigma})}{\partial \sigma_i}\bigg|_{\boldsymbol{\sigma} = \boldsymbol{\hat{\sigma}^{opt}}, \boldsymbol{e} = \boldsymbol{e'}} = 0 \Leftrightarrow  \hat{\sigma}^{opt}_i = |e'_i|  \; \forall i
+\end{equation}
+Ainsi, l'indice optimal est un prédicteur d'erreur parfait. L’énergie minimale associée
+\begin{equation}
+\begin{aligned}
+ \min_{\boldsymbol{\sigma} | \boldsymbol{e} = \boldsymbol{e'}  }{E(\boldsymbol{e}|\boldsymbol{\sigma})} &= \frac{n}{2}(log(2\pi)+1)  + \sum_i{log(|e'_i|)} \\
+ &= \sum_iEnt_{\dot{\sigma}_i} + \sum_i{log \Bigg(\frac{|e'_i|}{\dot{\sigma}_i}\Bigg)}
+\end{aligned}
+\end{equation}
+
+\subsubsection{Remise à l’échelle d'un indice}
+
+Les indices de confiance nécessitent parfois une remis à l’échelle. Pour estimer le facteur d’échelle nous considérons que l'indice proposé est égal à la valeur vrai de l’écart-type à un facteur près.
+\begin{equation}
+ \hat{\sigma}_i^2 = k\dot{\sigma}_i^2
+\end{equation}
+L'énergie s'écrit alors
+\begin{equation}
+E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}}/\sqrt{k}) = \frac{n}{2}(log(2\pi)-log(k))  + \sum_i{log(\hat{\sigma}_i)}  + k\sum_i\frac{e_i^2}{2 \hat{\sigma}_i^2}
+\end{equation}
+Soit $\hat{\kappa}$ l'estimateur du facteur d’échelle qui minimise l’énergie pour des écarts à la vérité donnée.
+\begin{equation}
+\frac{\partial E(\boldsymbol{e}|\boldsymbol{\hat{\sigma}}/\sqrt{k})}{\partial k)} \bigg|_{k=\hat{\kappa}, \boldsymbol{e} = \boldsymbol{e'}} = 0 \Leftrightarrow  \hat{\kappa} = \frac{1}{\frac{1}{n}\sum_i\frac{e_i^{'2}}{\hat{\sigma}_i^2}} = \frac{1}{m_Q \big(\frac{\boldsymbol{e'}}{\boldsymbol{\hat{\sigma}}}\big)} = \frac{1}{m_A \big(\frac{\boldsymbol{ke^{'2}}}{\boldsymbol{\dot{\sigma}^2}}\big)}
+\end{equation}
+L’énergie minimale prend alors la valeur
+\begin{equation}
+E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}}/\sqrt{\hat{\kappa}})= \sum_iEnt_{\dot{\sigma}_i} + \frac{1}{2} log \bigg(\frac{m_A(\boldsymbol{\frac{ke^{'2}}{\hat{\sigma}_i^2}})}{m_G(\boldsymbol{k})}\bigg)
+\end{equation}
+
+\subsubsection{Cas d'un indice constant}
+Il est très fréquent que l'incertitude sur les données ne soit pas connue. Lorsque ces données sont issues d'un autre processus, cela revient à prendre un compte une incertitude constante sur la solution de ce processus. Il est donc intéressant de se comparer à un indice uniforme pour évaluer la plus value des indices d'incertitudes proposés dans une chaîne de traitement. De surcroît il est intéressant de ce comparer au meilleur indice constant selon notre critère, ce que correspondront à un indice égal à l'estimée du facteur d’échelle défini dans la sous partie précédente.
+\begin{equation}
+\hat{\sigma}^{c-opt}_i = \sqrt{\frac{1}{n}\sum_i{e_i^{'2}}} = m_Q(\boldsymbol{e'}), \; \forall i
+\end{equation}
+et l’énergie associée
+\begin{equation}
+\begin{aligned}
+E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}^{c-opt}})  &= \frac{n}{2}(log(2\pi)+1) + n \, log (m_Q(\boldsymbol{e'}))  \\
+&= \sum_iEnt_{\dot{\sigma}_i} + n log \Big( \frac{m_Q(\boldsymbol{e'})}{m_G(\boldsymbol{\dot{\sigma}})}\Bigg)
+\end{aligned}
+\end{equation}
+
+\subsection{Comparaison entre indices}
+
+Soit deux indices $\sigma^a$ et $\sigma^b$, on peut évaluer la différence d'énergie
+\begin{equation}
+\begin{aligned}
+E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}^a}) - E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}^b})  &= \frac{1}{2}  \sum_i \Bigg( \Big(\frac{1}{\hat{\sigma}^{a2}_i} - \frac{1}{\hat{\sigma}^{b2}_i} \Big)e_i^{'2} + log \Big( \frac{\hat{\sigma}^{b2}}{\hat{\sigma}^{a2}} \Big) \Bigg)
+\end{aligned}
+\end{equation}
+Il n'est toutefois pas aisé d'interprété une telle valeurs. Nous proposons de normaliser les énergies telles que leur valeur minimale est 0 et que 1 correspondent au score du meilleur indice constant.
+\begin{equation}
+\begin{aligned}
+Cr(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}}) &= \frac{E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}}) - E(\boldsymbol{e'}||\boldsymbol{e'}|)}{E(\boldsymbol{e'}|m_Q(\boldsymbol{e'})\boldsymbol{1}) - E(\boldsymbol{e'}||\boldsymbol{e'}|)} \\
+&=   \frac{ \sum_i{\frac{1}{2}( r^2_i - 1)  - log(r_i)}}{ \sum_i{log(m_Q(\boldsymbol{e'}))- log(|\boldsymbol{e'}|)}}
+\end{aligned}
+\end{equation}
+avec $r_i = |e_i|/\hat{\sigma}_i$.
+
+
+
+%\begin{equation}
+%\begin{aligned}
+%E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}^a}) - E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}^b})  &= \frac{1}{2}  \sum_i \Bigg( \Big(\frac{1}{\hat{\sigma}^{a2}_i} - \frac{1}{\hat{\sigma}^{b2}_i} \Big)e_i^{'2} + log \Big( \frac{\hat{\sigma}^{b2}}{\hat{\sigma}^{a2}} \Big) \Bigg) \\
+%& = \frac{1}{2}  \sum_i \Big( (k^a_i - k^b_i) \frac{e_i^{'2}}{\dot{\sigma}_i^2} + log \Big( \frac{k^{b}}{k^{a}} \Big)  \Big)
+%\end{aligned}
+%\end{equation}
+
+%\begin{equation}
+%E(\boldsymbol{e'}|\boldsymbol{\hat{\sigma}}) - \min_{\sigma}E(\boldsymbol{e'}|\boldsymbol{\sigma})  = \sum_i{log \Big( \frac{\hat{\sigma}_i}{|e'_i|} \Big) } +  \frac{1}{2} \sum_i \Bigg( \frac{e_i^{'2}}{\hat{\sigma}_i^2} - 1 \Bigg)
+%\end{equation}
+
+\section{Application des indices aux problèmes images}
+\label{s:application_index}
+
+\subsection{Segmentation binaire d'image}
+
+\subsection{Segmentation binaire d'un espace 3D}
+
+\subsection{Dé-bruitage}
+
+\subsection{Reconstruction stéréoscopique}
+
+
+
+
+%\section{Prise en compte de la confiance dans les processus d'optimisation}
+%Pondération entre deux attaches au données. Pondération des liens ou de la fonction de régularisation associée au lien.
+
+%
+%\subsection{Modèle stochastique des données}
+%
+%La covariance sur les paramètres ne dépend pas des observations, cependant il est nécessaire de connaître $\Sigma_\omega$. En pratique nous utiliserons une estimée de cette matrice, $\hat{\Sigma}_\omega$.
+%Une erreur à un facteur près de cette matrice se traduit par ce même facteur sur la covariance estimée des paramètres.
+%
+%
+%\section{Modèle L2-L1}
+%
+%\begin{equation}
+%	E(\boldsymbol{l})= \sum_{i \in I}{(l_i-r_i)^2} + \lambda\sum_{(i,j) \in N, i>j}{|l_i-l_j|}
+%\end{equation}
+%Le problème possède plusieurs minima. Non dérivable. Par convention dérivé en zéro est zéro.
+%\begin{equation}
+%	\frac{\partial E(\boldsymbol{l})}{\partial l_i} = 2(l_i-r_i) + \lambda\sum_{j / (i,j) \in N}{sign(l_i-l_j)}
+%\end{equation}
+%Pour un $\lambda$ suffisamment petit.
+%\begin{equation}
+%	l_i =r_i + \frac{\lambda}{2}\sum_{j / (i,j) \in N}{sign(l_i-l_j)} = r_i + \frac{\lambda}{2}\sum_{j / (i,j) \in N}{sign(r_i-r_j)}
+%\end{equation}
+%et
+%\begin{equation}
+%Q_{ll}=Q_{rr}
+%\end{equation}
+%
+%Ou le pixel est déplacé d'une constante, ou il est joint à un de ces voisins.
+%Matrice organisée en composante connexe.
+%
+%\section{Du dé-bruitage au problème de reconstruction}
+%
+%Les modèles composé d'une distance à une référence et une régularisation sont adapté au problème de dé-bruitage. On cherche à limiter les variations dans la solution toute en restant proche des observations.
+%
+%Ce problème reste 
+%
+%\subsection{Attache aux données ambiguë}
+%
+%\subsection{Attache aux données bruitée}
+
+
+%\bibliographystyle{unsrt}
+\bibliographystyle{apalike-fr}
+\bibliography{../bibliography/Bib3}
+
+%----------------------------------------------------------------------------------------
+\end{document}
+%----------------------------------------------------------------------------------------

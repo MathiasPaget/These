@@ -1,0 +1,26 @@
+% 8-connexity
+\foreach \i in {\xMin,...,\xMax} {\foreach \j in {\yMin,...,\yMax}{
+	\pgfmathtruncatemacro\k{\i+\j*(\xMax+1)}
+	\node (\k) at (\i/2,-\j/2) [circle,draw] {};
+	
+	\ifthenelse{\i>0}{
+		\pgfmathtruncatemacro\a{\k-1}
+		\draw[-] (\k) edge (\a);
+	
+		\ifthenelse{\j>0}{
+			\pgfmathtruncatemacro\b{\k-(\xMax+1)-1}
+			\draw[-] (\k) edge (\b);
+		}
+
+		\ifthenelse{\j<\yMax}{
+			\pgfmathtruncatemacro\b{\k+(\xMax+1)-1}
+			\draw[-] (\k) edge (\b);
+		}		
+				
+	}
+	
+	\ifthenelse{\j>0}{
+		\pgfmathtruncatemacro\b{\k-(\xMax+1)}
+		\draw[-] (\k) edge (\b);
+	}	
+}}

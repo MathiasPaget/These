@@ -1,0 +1,34 @@
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3.2cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt}]
+  
+  	\node[main node] (10) {$\mathcal{T}$};
+  	\node[main node] (4) [below left of=10] {$\mathcal{X}^p_4$};
+  	\node[main node] (3) [below of=4] {$\mathcal{X}^p_3$};
+  	\node[main node] (2) [below of=3] {$\mathcal{X}^p_2$};
+  	\node[main node] (1) [below of=2] {$\mathcal{X}^p_1$};
+  	\node[main node] (8) [below right of=10] {$\mathcal{X}^p_4$};
+  	\node[main node] (7) [below of=8] {$\mathcal{X}^q_3$};
+  	\node[main node] (6) [below of=7] {$\mathcal{X}^q_2$};
+  	\node[main node] (5) [below of=6] {$\mathcal{X}^q_1$};  
+  	\node[main node] (9) [below right of=1] {$\mathcal{S}$};
+  	
+  	\path[->,every node/.style={font=\sffamily\small}, teal]
+  	(9) edge node [above right] {$D_x(0)$} (1)
+  	(9) edge node [above left] {$D_y(0)$} (5)
+  	(1) edge [bend right=10] node[right] {$D_x(1)$} (2)
+  	(2) edge [bend right=10] node[right] {$D_x(2)$} (3)
+  	(3) edge [bend right=10] node[right] {$D_x(3)$} (4)
+  	(5) edge [bend left=10] node[left] {$D_y(1)$} (6)
+  	(6) edge [bend left=10] node[left] {$D_y(2)$} (7)
+  	(7) edge [bend left=10] node[left] {$D_y(3)$} (8)
+  	(4) edge node [below right] {$D_x(4)$} (10)
+  	(8) edge node [below left] {$D_y(4)$} (10); 
+  	
+  	\path[->,every node/.style={font=\sffamily\small}, darkgray!90]
+  	(2) edge [bend right=10] node[left] {$\infty$} (1)
+  	(3) edge [bend right=10] node[left] {$\infty$} (2)
+  	(4) edge [bend right=10] node[left] {$\infty$} (3)
+  	(6) edge [bend left=10] node[right] {$\infty$} (5)
+  	(7) edge [bend left=10] node[right] {$\infty$} (6)
+  	(8) edge [bend left=10] node[right] {$\infty$} (7);
+\end{tikzpicture}

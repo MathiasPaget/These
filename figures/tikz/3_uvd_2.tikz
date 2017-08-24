@@ -1,0 +1,145 @@
+\begin{tikzpicture}[thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt,}]
+
+	\tikzstyle{ileft}=[->,teal!90]
+	\tikzstyle{ileftd}=[-,teal!90]
+	\tikzstyle{ileftb}=[->,teal!90, bend left=10]
+	\tikzstyle{iright}=[->,violet!70]
+	\tikzstyle{irightd}=[-,violet!70]
+	\tikzstyle{irightb}=[->,violet!70,bend left=10]
+	\tikzstyle{constr}=[<-,gray!70, bend right=10]
+
+	% grid
+	\draw[step=2,gray!20,thin,xshift=1cm,yshift=1cm] (0,0) grid (14,14);
+	
+	\node[main node] (S) at (1,1) [circle] {$\mathcal{S}$};
+	\node[main node] (T) at (15,15) [circle] {$\mathcal{T}$};
+	
+ 	%axis
+	\draw[->,thick] (0,0) -- coordinate (x axis mid) (15.5,0) node[above]{$v$};
+    \draw[<-,thick] (0,-0.5) -- coordinate (y axis mid) (0,15.5) node[right]{$u$};
+    %ticks
+    
+     \foreach \x in {0,...,6}{
+     	\foreach \y in {0,...,6}{
+     	
+     		\pgfmathtruncatemacro\p{\y*2+3}
+    		\draw (\p,1pt) -- (\p,-3pt) node[anchor=north] {\y};
+    		
+     		\pgfmathtruncatemacro\q{15-\x*2}
+    		\draw (1pt,\q) -- (-3pt,\q) node[anchor=east] {\x};
+    	
+    		\pgfmathtruncatemacro\d{\x-\y}
+    		\pgfmathtruncatemacro\i{\x+7*\y}
+    	
+    		\ifthenelse{\d>0}{
+    	 		\ifthenelse{\d<5}{
+    	 			%\node[main node] (\i) at (\p,\q) [circle] {\i};
+    	 			\node[main node] (\i) at (\p,\q) [circle] {$\mathcal{X_{\text{\x \y}}}$};
+    	 			
+%    	 			\ifthenelse{\d>1}{
+%    	 		
+%    	 				\pgfmathtruncatemacro\j{\x-1+7*\y}
+%						\path[irightb] (\i) edge node [left] {} (\j);
+%						\path[constr] (\i) edge node [left] {} (\j);
+%						
+%    	 			}
+    	 			 	 			
+    	 		}
+    	 		
+    	 	}
+    	 	
+    	 }
+    	
+    }
+    
+    \foreach \x in {0,...,6}{
+     	\foreach \y in {0,...,6}{  
+     		
+    	 	\pgfmathtruncatemacro\d{\x-\y}
+    	 	\pgfmathtruncatemacro\i{\x+7*\y}
+    	 	
+    	 	
+    	 	\ifthenelse{\d>1}{
+    	 		\ifthenelse{\d<5}{
+    	 		
+    	 		\pgfmathtruncatemacro\j{\x-1+7*\y}
+				\path[irightb] (\i) edge node [left] {} (\j);
+				\path[constr] (\i) edge node [left] {} (\j);  
+				
+    	 		\pgfmathtruncatemacro\k{\x+7*(\y+1)}
+				\path[ileftb] (\i) edge node [below] {} (\k);
+				\path[constr] (\i) edge node [left] {} (\k); 
+    	 		
+    	 		\path[<->,every node/.style={font=\sffamily\small},red!70]
+    	 		(\j) edge node [below left] {} (\k);
+    	 	}
+    	 	
+    	 } 
+    	    	 	
+     	}
+     	
+    }
+    
+    	 \coordinate (A) at (1,3) ;
+    	 \coordinate (B) at (1,5) ;
+    	 \coordinate (C) at (1,7) ;
+    	 \coordinate (D) at (1,9) ;
+    	 \coordinate (E) at (1,11) ;
+    	 \coordinate (F) at (1,13) ;
+    	  
+    	 \coordinate (G) at (3,1);
+    	 \coordinate (H) at (5,1);
+    	 \coordinate (I) at (7,1);
+    	 \coordinate (J) at (9,1);
+    	 \coordinate (K) at (11,1);
+    	 \coordinate (L) at (13,1);
+    	 
+     	 \coordinate (a) at (15,3) ;
+    	 \coordinate (b) at (15,5) ;
+    	 \coordinate (c) at (15,7) ;
+    	 \coordinate (d) at (15,9) ;
+    	 \coordinate (e) at (15,11) ;
+    	 \coordinate (f) at (15,13) ;
+    	  
+    	 \coordinate (g) at (3,15);
+    	 \coordinate (h) at (5,15);
+    	 \coordinate (i) at (7,15);
+    	 \coordinate (j) at (9,15);
+    	 \coordinate (k) at (11,15);
+    	 \coordinate (l) at (13,15);   	 
+    	 
+    	  
+    	 \draw[ileft] (S) -- (F) -- (1);
+    	 \draw[ileft] (E) -- (2);
+    	 \draw[ileft] (D) -- (3);
+    	 \draw[ileft] (C) -- (4);
+    	 \draw[ileft] (B) -- (12);
+    	 \draw[ileft] (A) -- (20);
+
+    	 \draw[iright] (S) -- (L) -- (41);
+    	 \draw[iright] (K) -- (34);
+    	 \draw[iright] (J) -- (27);
+    	 \draw[iright] (I) -- (20);
+    	 \draw[iright] (H) -- (12);
+    	 \draw[iright] (G) -- (4);    
+    
+     	 \draw[ileft] (41) -- (a) -- (T);
+    	 \draw[ileftd] (33) -- (b);
+    	 \draw[ileftd] (25) -- (c);
+    	 \draw[ileftd] (17) -- (d);
+    	 \draw[ileftd] (9) -- (e);
+    	 \draw[ileftd] (1) -- (f);
+
+    	 \draw[iright] (1) -- (g) -- (T);
+    	 \draw[irightd] (9) -- (h);
+    	 \draw[irightd] (17) -- (i);
+    	 \draw[irightd] (25) -- (j);
+    	 \draw[irightd] (33) -- (k);
+    	 \draw[irightd] (41) -- (l);     
+      
+    	 \path[<->,every node/.style={font=\sffamily\small},red!70]
+    	 (4) edge node [below] {} (12)
+    	 (12) edge node [below] {} (20);    	
+    	
+    	
+\end{tikzpicture}

@@ -1,0 +1,1075 @@
+\documentclass[../main/These_Mathias_Paget.tex]{subfiles}
+
+%----------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------
+
+%----------------------------------------------------------------------------------------
+\chapter{Optimisation par coupe de graphe}
+%----------------------------------------------------------------------------------------
+
+Le problèmes image sont souvent $NP$-difficiles. Cependant dans certain cas, il existe des algorithmes d'optimisation qui résolvent exactement le problème en temps polynomial. Dans cette partie, nous allons nous intéresser à l'une de ces méthodes : la formulation par coupure de graphe. C'est une méthode d'optimisation discrète qui met en jeu une catégorie de graphe, appelé graphe-ST, permettant de représenter une fonction de variables binaires d'ordre 2 et sous-modulaire (Partie~\ref{s:GC}). Ces fonctions peuvent être minimisées en temps polynomial par différents algorithmes (Partie~\ref{s:min_GC}). Des méthodes ont été proposées pour étendre la formulation par coupure de graphe à d'autres types de fonction (Partie~\ref{s:GC_ext}).
+
+\section{Représentation d'une fonction par un graphe}
+\label{s:GC}
+
+La coupe de graphe est réalisée sur une catégorie de graphe appelée graphe-ST ou réseau de flots. Il permet de représenter des énergies de variables binaires. Cette énergie peut s’écrire sous la forme d'une fonction pseudo-booléenne ($FPB)$. Cependant seule une classe de FPB peut être représentée par un graphe.
+
+\subsection{Coupure de graphe}
+	% Definir un graphe
+	Un graphe est une structure composée de nœuds et d'arcs reliant un couple de nœuds, $G=(\boldsymbol{\mathcal{V}},\boldsymbol{\mathcal{A}})$ où $\boldsymbol{\mathcal{V}}$ est un ensemble de nœuds, parfois appelés sommets (\textit{vertex}) et $\boldsymbol{\mathcal{A}}$ un ensemble d'arcs. Un arc relie une paire orientée de nœuds dans $\boldsymbol{\mathcal{V}}^2 $ et on note $(\mathcal{V}_u,\mathcal{V}_v)$ l'arc qui part du nœuds $\mathcal{V}_u$ vers le nœuds $\mathcal{V}_v$. Les arcs $(\mathcal{V}_u,\mathcal{V}_v)$ et $(\mathcal{V}_v,\mathcal{V}_u)$ sont appelés arcs frères, ces deux arcs forment une arête notée $\{\mathcal{V}_u,\mathcal{V}_v\}$. Les arcs et les nœuds peuvent être pondérés, c'est à dire associés à une valeur. Nous considérerons des arcs pondérés par des coefficients positifs appelés capacités, on notera $c_{uv}$ la capacité de l'arc $(\mathcal{V}_u,\mathcal{V}_v)$. Il existe des graphes non-orientés. Ils peuvent être vus comme des cas particuliers de graphes orientés où les capacités des arcs frères sont égales. Il sont définis comme un ensemble de nœuds et un ensemble d'arêtes $G=(\boldsymbol{\mathcal{V}},\boldsymbol{\mathcal{E}})$, $\boldsymbol{\mathcal{E}} \subset \boldsymbol{\mathcal{V}}^2$. Un exemple de graphe orienté est donné dans la Figure~\ref{fig:graph_ex}.
+	
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt}]
+  
+  \node[main node] (1) {$W$};
+  \node[main node] (2) [right of=1] {$X$};
+  \node[main node] (3) [below of=1] {$Y$};
+  \node[main node] (4) [below of=2] {$Z$};
+  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	
+  	(1) edge node [right] {} (4)
+  		edge [bend right] node[left] {} (2)
+  	(2) edge node [right] {} (4)
+  		edge [bend right] node[right] {} (1)
+  	(3) edge node [left] {} (1);
+
+\end{tikzpicture}
+\end{center}
+\caption{Exemple de graphe orienté non pondéré, $G~=~(\{W,X,Y,Z\},\{(W,X), (W,Z), (X,W), (X,Z), (Y,W)\})$ composé de 4 nœuds $W$, $X$, $Y$, $Z$ et de 5 arcs.}
+\label{fig:graph_ex}
+\end{figure}
+
+	% Definir le ST-graph
+	Le graphe utilisé pour la coupe de graphe et le poussage de flot est appelé  $ST$-Graphe. Il s'agit d'un graphe orienté sans boucle. Une boucle est un arc qui à le même nœud et départ et d'arrivé c'est à dire qu'un lien part d'un nœud et arrive à autre nœud. Ce graphe possède deux nœuds particuliers - la source $\mathcal{S}$ et le puits $\mathcal{T}$. Un exemple de graphe est représenté Figure~\ref{fig:struct_elem}. Le $ST$-graphe est aussi appelé réseau de flots : l'ensemble de la structure représente un réseau dans lequel peut s'écouler un flot de proche en proche de la source vers le puits dans la limite des capacités des arcs. Ce flot s’écoule le long d'un chemin. Un chemin $P=(\boldsymbol{\mathcal{V'}},\boldsymbol{\mathcal{A'}})$ dans le graphe $G$ est une suite consécutive d'arcs du graphe orienté, formellement $\boldsymbol{\mathcal{V'}} \subset \boldsymbol{\mathcal{V}}, \boldsymbol{\mathcal{A'}} = \{ (\mathcal{V'}_0, \mathcal{V}_1), \ldots , (\mathcal{V}_{n{-}1}, \mathcal{V}_n) \} \subset \boldsymbol{\mathcal{A}}$.	
+	
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt}]
+  	\node[main node] (1) {$\mathcal{U}$};
+  	\node[main node] (3) [below left of=1] {$\mathcal{S}$};
+  	\node[main node] (4) [below right of=1] {$\mathcal{T}$};
+  	\node[main node] (2) [below right of=3] {$\mathcal{V}$};
+  	\path[every node/.style={font=\sffamily\small}]
+  	(1) edge node [right] {} (4)
+  		edge [bend right] node[left] {} (2)
+  	(2) edge node [right] {} (4)
+  		edge [bend right] node[right] {} (1)
+  	(3) edge node [left] {} (1)
+  		edge node [left] {} (2);
+\end{tikzpicture}
+\end{center}
+\caption{Structure élémentaire de $ST$-graphe (source, puits et deux nœuds)}
+\label{fig:struct_elem}
+\end{figure}	
+	
+	% Definir une coupe
+	Une coupe de graphe est une partition du graphe en deux parties, l'une contenant la source $\mathcal{S}$ l'autre le puits $\mathcal{T}$. L'ensemble des nœuds de la partie "source", et de la partie "puits" sont notés respectivement $\boldsymbol{\mathcal{S}}$ et $\boldsymbol{\mathcal{T}}$. Une coupe est associée à une valeur, la valeur de la coupe est la somme des capacités des arcs dont l'origine est dans $\boldsymbol{\mathcal{S}}$ et l'arrivée dans $\boldsymbol{\mathcal{T}}$,
+	\begin{equation}
+		Coupe(\boldsymbol{\mathcal{S}}, \boldsymbol{\mathcal{T}}) = \sum_{\mathcal{V}_u \in \boldsymbol{\mathcal{S}} , \mathcal{V}_v \in \boldsymbol{\mathcal{T}}, (\mathcal{V}_u,\mathcal{V}_v) \in \boldsymbol{\mathcal{A}}}{c_{uv}}
+	\end{equation}
+
+\subsection{Fonctions pseudo-booléennes}
+	\label{ss:FPB_graph}
+Les fonctions pseudo-booléennes ($FPB$) sont des polynômes de variables booléennes.
+	\begin{equation}
+		F(\boldsymbol{x}) = a_{ \emptyset} +  \sum_{i}{a_ix_i} + \sum_{i<j}{a_{ij}x_ix_j} + \sum_{i<j<k}{a_{ijk}x_ix_jx_k} + \ldots.
+		\label{eq:FPBunique}
+	\end{equation}
+L'écriture de l'équation \ref{eq:FPBunique} est appelée forme unique. L'ordre du polynôme correspond à l'ordre de la $FPB$. Il peut être intéressant de réécrire la fonction à l'aide d'une constante et d'une somme de termes à coefficient positif. Une telle écriture est appelée posiforme, notée $P$. Pour ce faire certaines variables sont remplacées par leur conjuguée
+	\begin{equation}
+		\bar{x} = 1 - x.
+	\end{equation}
+Une fonction pseudo-booléenne possède plusieurs posiformes. Il existe un lien entre une coupe de graphe et les $FPB$, avec $G_{P}(\boldsymbol{\mathcal{X}},\boldsymbol{\mathcal{A}})$ le graphe correspondant à la posiforme $P$. Chaque nœud du graphe est représenté par une variable booléenne, qui correspond à l'affectation du nœud $\mathcal{X}_p$ à la source ou au puits, nous choisissons la convention :
+	\begin{equation}
+		\begin{aligned}
+				x_p = 0 &, \mathcal{X}_p \in \boldsymbol{\mathcal{S}} \\
+				x_p = 1 &, \mathcal{X}_p \in \boldsymbol{\mathcal{T}}.
+		\end{aligned}
+	\end{equation}
+La capacité d'un arc entre en jeu dans la coupe si son origine est du coté de la source ($x_{origine}=0$) et son arrivée du coté du puits ($x_{arrivee}=1$) et uniquement dans cette configuration. Cela se traduit dans la posiforme par un terme quadratique $\bar{x}_{origine}x_{arrivee}$ multiplié par la capacité de l'arc considéré. Ainsi ces variables permettent d'écrire les valeurs de coupe du graphe comme des fonctions pseudo-booléennes.
+	\begin{equation}
+	\label{eq:cut_posi}
+		Coupe(\boldsymbol{\mathcal{S}}, \boldsymbol{\mathcal{T}}) = \sum_{(\mathcal{V}_u, \mathcal{V}_v) \in \boldsymbol{\mathcal{A}}}{c_{uv}\bar{x}_ux_v} = P_G(\boldsymbol{x}),
+	\end{equation}
+où $\boldsymbol{x}$ est l'ensemble des variables $x$ associées aux nœuds. $P_G$ la posiforme est donc associée au graphe $G$; c'est une $FPB$ quadratique. Par définition la source est du coté de la source ($x_{s}=0$) et le puits est du coté du puits ($x_{t}=1$), ainsi les termes les mettant en jeu se réécrivent comme des termes unaires et le terme entre la source et le puits devient une constante. On défini l’ensemble des nœuds distincts de la source et du puits, $\boldsymbol{\mathcal{X}^*} = \boldsymbol{\mathcal{X}} / \{\mathcal{S},\mathcal{T}\}$ et les arcs mettent en jeu ces nœuds $\boldsymbol{\mathcal{A}^*}=\boldsymbol{\mathcal{A}} \cap \boldsymbol{\mathcal{X}^{*2}}$, la posiforme s’écrit
+	\begin{equation}
+	\label{eq:posiforme_rep}
+			P_G(\boldsymbol{x})= c_{\emptyset} + \sum_{\mathcal{X}_u \in \boldsymbol{\mathcal{X}^*}}{c_{su}x_u + c_{ut}\bar{x}_u}+ \sum_{(\mathcal{V}_u, \mathcal{V}_v) \in \boldsymbol{\mathcal{A^*}}}{ c_{uv}\bar{x}_ux_v }
+	\end{equation}
+et la construction du graphe à partir de cette posiforme est donnée dans le Tableau \ref{tab-constr-graph}.
+	
+\begin{table}[hb]
+	\centering
+	\begin{tabular}{c|c|c}
+			Arc dans le graphe & Capacité & Terme dans la posiforme \\
+			\hline
+			$\mathcal{V}_u \rightarrow \mathcal{V}_v$ & $c_{uv}$ & $\bar{x}_ux_vc_{uv}$ \\
+			$\mathcal{S} \rightarrow \mathcal{V}_u$ & $c_{su}$ & $x_ic_{su}$ \\
+			$\mathcal{V}_u \rightarrow \mathcal{T}$ & $c_{st}$ & $\bar{x}_ic_{ut}$ \\
+	\end{tabular}
+	\caption{Table de correspondance entre un arc dans le graphe et un terme de la posiforme.}
+	\label{tab-constr-graph}
+\end{table}
+		
+	Le graphe donné dans la Figure~\ref{fig:sub1} s'écrit comme une posiforme et sous la forme unique suivantes :
+	\begin{subequations}
+		\begin{align}
+        P(x,y,z) &= 2\bar{x} + y + z + 2x\bar{y} + 2y\bar{z} \label{eq:fonction_exemple_1} \\
+        		 &= 2 - 2x + 3y + 3z - 2xy - 2yz
+		\end{align}
+	\end{subequations}
+			
+\subsection{La sous-modularité et représentation en graphe}
+	La notion de sous-modularité est une notion centrale pour caractériser la capacité de représentation des graphes. Elles possèdent de nombreuses définitions équivalentes. Si $F$ est une fonction d'un ensemble, la sous-modularité s'écrit :
+	\begin{equation}
+		F(X \cap Y) + F(X \cup Y) \leq F(X) + F(Y)
+	\end{equation}
+où $\cap$ est l'opérateur d'intersection et $\cup$ l'opérateur d'union. Appliquées aux fonctions pseudo-booléennes, la sous-modularité d'écrit :
+	\begin{equation}
+		\label{eq:sous_mod_bin}
+		F(\boldsymbol{x} \vee \boldsymbol{y}) + F(\boldsymbol{x} \wedge \boldsymbol{y}) \leq F(\boldsymbol{x}) + F(\boldsymbol{y})
+	\end{equation}
+Une autre définition équivalente met en jeu la dérivée seconde de la fonction :
+	\begin{equation}
+	\frac{\partial^{2} F(\boldsymbol{x})}{\partial x_u \partial x_v} \leq 0
+	\end{equation}	
+La dérivée d'une fonction pseudo-booléenne peut être évaluée de la manière suivante :
+	\begin{equation}
+	\frac{\partial F(\boldsymbol{x})}{\partial x_u} = P(\boldsymbol{x}|x_u=1) - P(\boldsymbol{x}|x_u=0)
+	\end{equation}
+Lorsque la fonction $F$ est quadratique, la condition dévient
+	\begin{equation}
+	a_{uv} \leq 0, \; \forall (x_u,x_v) \in  \boldsymbol{x}^2
+	\end{equation}	
+Parmi les $FPB$ quadratique, seul un sous-ensemble peut être représenté par un graphe. En dérivant la forme générale de la posiforme issue d'un graphe données dans (\ref{eq:cut_posi}),
+	\begin{equation}
+	\frac{\partial^{2} P_G(\boldsymbol{x})}{\partial x_u \partial x_v} = {}-c_{uv}+c_{vu} \leq 0 
+	\end{equation}
+Ainsi toute les fonctions quadratiques représentables par un graphe sont sous-modulaires. Inversement on monte aisément d'une fonction linaire est représentable par un graphe en appliquant la construction Tab~\ref{tab-constr-graph}
+	\begin{equation}
+	\begin{aligned}
+		F(\boldsymbol{x}) &= a_{ \emptyset} +  \sum_{i}{a_ix_i} \\
+						 &= a_{ \emptyset} +  \sum_{i}{-a^{-}_i + {a^{-}_i\bar{x}_i} + a^{+}_ix_i}
+	\end{aligned}
+	\end{equation}
+	où $a^{+} = \max(a,0)$ et $a^{-} = \max(-a,0)$. Dans le cas où $f$ est une fonction quadratique sous-modulaire, on a :
+	\begin{equation}
+	\begin{aligned}
+		F(\boldsymbol{x}) &= Lin(\boldsymbol{x}) + \sum_{i<j}{a_{ij}x_ix_j} \\
+						 &= Lin(\boldsymbol{x}) + \sum_{i<j}{-a_{ij}\bar{x}_ix_j} \\
+	\end{aligned}
+	\end{equation}	
+où $Lin$ est une forme linaire quelconque. Si les coefficients $a_{ij}$ sont négatifs, la fonction $F$ peut s'écrire comme un graphe en appliquant la construction Tab~\ref{tab-constr-graph}. Un problème peut être représenté par un graphe, si et seulement si, il existe une écriture du problème sous la forme d'une fonction pseudo-booléenne quadratique sous-modulaire.
+
+\subsection{Contraction du graphe}
+
+La contraction de graphe est une opération qui permet de simplifier un graphe en fusionnant plusieurs nœuds. Le nœuds restant représente les nœuds précédents sous la contrainte qu'ils aient la même affectation. Soit $\boldsymbol{\mathcal{W}}$, l'ensemble des nœuds à contracter et $\mathcal{W}$ le nœud restant, les arcs entant ou sortant de $\boldsymbol{\mathcal{W}}$ ont alors respectivement pour origine et pour arrivée un nouveau nœud $\mathcal{W}$. Dans le cas particulier où $\boldsymbol{\mathcal{W}}$ contient la source (le puits), $\mathcal{W}$ est alors la source (le puits) à la différence que les arcs entrants (sortants) sont retirés du graphe.
+
+De façon équivalente sur la posiforme $P_G$ il suffit de substituer les variables de nœuds de $\boldsymbol{\mathcal{W}}$ par la variable $x_w$, ce qui permet de regrouper les termes qui sont à la frontière de $\boldsymbol{\mathcal{W}}$ et annuler les termes qui sont interne à $\boldsymbol{\mathcal{W}}$. Dans le cas où $\boldsymbol{\mathcal{W}}$ contient la source (le puits), on pose $x_w=0$ ($x_w=1$). Les terme des arcs à la frontière de $\boldsymbol{\mathcal{W}}$ s'annulent ou deviennent des termes unaires.
+
+\section{Minimisation d'un problème par coupure de graphe}
+\label{s:min_GC}
+
+La coupure de graphe est une méthode qui permet d'optimiser globalement des $FPB$ sous-modulaire d'ordre 2 par recherche d'une coupe minimale. Ce problème, liée au problème de maximisation du flot peut être résolu par plusieurs algorithmes. Les opérations réalisées par les algorithmes peuvent être interprétés comme des manipulations algébriques sur une $FPB$.
+
+\subsection{Recherche du flot maximal}
+
+\subsubsection{Flot maximal/Coupe minimale}
+\label{sss:maxflow_mincut}
+
+Un flot $f$ et la valeur de flot $|f|$ sont définis comme
+	\begin{equation}
+	\begin{aligned}
+		 f_{uv}  & \leq c_{uv} , \; \; & \forall (u,v)  \in \boldsymbol{\mathcal{A}}, & \\
+		 \sum_{u|(u,v) \in \boldsymbol{\mathcal{A}}} f_{uv} & = \sum_{v|(v,u) \in \boldsymbol{\mathcal{A}}} f_{vu} , \; \; & \forall v \in \boldsymbol{\mathcal{X}^*}, &\\
+	     |f| & = \sum_{u,(s,u) \in \boldsymbol{\mathcal{A}}} f_{su}. &
+	\end{aligned} 
+	\end{equation}
+où $|$ signifie "tel que". La première condition est que le flot est limité par les capacités des arcs. La deuxième condition est que le flot entrant dans un nœud est toujours égal au flot sortant d'un nœud, enfin  $|f|$ est la valeur du flot qui s'écoule de la source vers le puits. C'est une valeur positive et bornée par la somme des capacités du graphe, elle possède donc une limite appelée flot maximal. Le problème du flot maximal est équivalent au problème de coupe minimale~\citep{elias1956}. Lorsque le flot ne peut plus augmenter, on dit que le graphe est saturé. Les coupes ne mettant en jeu que des arcs saturés sont des coupes minimales.
+
+\subsubsection{Poussage de flot}	
+	Il existe deux familles d'algorithmes permettant de calculer le flot maximal et d'en déduire une coupe minimale. La première famille appelée poussage/ré-étiquetage~(\citet{Goldberg88ACM}). Elle fait intervenir la notion de de \textit{préflot}. A la différence du  flot, le préflot en entrée d'un nœuds peut être en excès par rapport au préflot en sortie. La seconde famille résout le problème par poussage de flot~\citep{Ford62book}. Il s'agit de trouver itérativement un chemin de la source au puits dans lequel s'écoule un flot, appelé chemin augmentant, et d'appliquer le poussage de flot sur ce chemin.
+	
+	Le poussage flot est défini différemment entre les algorithmes. Dans~\cite{Ford62book}, le flot est gardé en mémoire pour chaque arc et l'algorithme se décompose en deux étapes : 1) le poussage du flot sur les arcs non saturés et marquage des arcs, 2) la remise en cause des flots déjà poussés. Dans~\cite{Boros2014} et \cite{Boykov04PAMI}, le flot est retranché aux capacités des arcs mis en jeu dans le chemin et est ajouté aux arcs frères de sorte le poussage de flot est un transfert de capacité entre arcs frères. Plus formellement, soit $\boldsymbol{\mathcal{A}'}$ l'ensemble d'arc représentant le chemin augmentant, le flot maximal $mf$ dans le chemin est défini par $mf = \min_{(u,v) \in A'}{c_{uv}}$. L'opération de poussage de flot est défini par :
+	\begin{equation}
+		\forall (u,v) \in  \boldsymbol{\mathcal{A}'}, \left\{
+		\begin{aligned}
+			c_{uv} \leftarrow c_{uv}-mf \\
+			c_{vu} \leftarrow c_{vu}+mf \\
+		\end{aligned}
+		\right.
+	\end{equation}	
+Le graphe modifié est appelé graphe résiduel et les capacités de ses arcs sont appelées capacités résiduelles. Cette méthode permet d'une part de se passer de l'étape de remise en cause des chemins, et d'autre part de réécrire le problème de poussage de flot comme la minimisation d'une fonction pseudo-booléenne comme nous allons le voir dans la Partie~\ref{ss:flow_FPB}.
+
+\subsubsection{Algorithme Maxflow}
+	Outre la manière de définir la poussage de flot, les algorithmes de poussage de flot diffèrent dans la recherche de chemin augmentant. Une des premières méthodes est de construire un arbre de recherche depuis la source et le puits jusqu'à trouver un chemin augmentant, de pousser le flot et d'itérer. La particularité de l'algorithme Maxflow~\citep{Boykov04PAMI}, \citep{Kolmogorov14IPOL} par rapport aux algorithmes antérieurs de poussage de flot réside dans la réutilisation des arbres de l'étape antérieure. Cette évolution a permis des gains importants en terme de temps de calcul et a fait le succès de cet algorithme. L'algorithme se décompose en trois étapes réalisées itérativement : 1) la croissance de l'arbre source et de l'arbre puits, 2) si un chemin augmentant est trouvé, le poussage du flot, 3) l'adoption des nœuds qui aurait été séparés de leur arbre. L'algorithme s’arrête lorsque plus aucun chemin augmentant n'est trouvé.
+
+\subsection{Poussage de flot et FPB}
+\label{ss:flow_FPB}
+
+Nous avons vu dans la Partie~\ref{ss:FPB_graph} qu'un graphe peut être représenté par une fonction pseudo-booléenne. Il existe un lien entre les chemins augmentant et le poussage de flot avec l'arithmétique des fonctions booléennes. 
+
+\subsubsection{Chemin augmentant et somme alternée}
+
+Trouver un ensemble d'arc formant un chemin augmentant revient à appliquer à la posiforme une identité remarquable appelée somme alternée,
+	\begin{equation}
+			x_0 + \sum_{i=0}^{n}{\bar{x}_ix_{i+1}} + \bar{x}_n =
+			 1 + \sum_{i=0}^{n}{x_i\bar{x}_{i+1}}
+		\label{eq:somme_alt}
+	\end{equation}
+Le terme de gauche correspond au flot le long du chemin augmentant qui vont être retranché dans le graphe résiduel, et le terme de droite correspond aux capacités ajoutées aux arcs frères du graphe résiduel. Un chemin augmentant de valeur $f$, $\mathcal{S} \rightarrow \mathcal{V}_0 \rightarrow \mathcal{X}_1 \rightarrow \mathcal{X}_2 \rightarrow \mathcal{T}$ correspond au terme $f( x_0 + \bar{x}_0x_1 + \bar{x}_1x_2 + \bar{x}_2)$ dans la posiforme. Trouver et pousser un chemin augmentant dans un graphe revient à chercher une somme alternée dans la posiforme et pousser un flot revient à appliquer l'identité \ref{eq:somme_alt}. Un exemple de correspondance entre poussage de flot et posiforme est montré dans Figure~\ref{sf:maxflow_exemple}.
+	
+\subsubsection{Problème de maximisation-minimisation}
+	\label{sss:min_max}
+	Soit $P_G$ la posiforme représentant le graphe initial, $K$ une constante et $Res_G$ la posiforme du graphe résiduel tels que $P_G(\boldsymbol{x})=K+Res_G(\boldsymbol{x})$, alors
+	\begin{equation}
+		\label{min_max_sousmod}
+		%
+			K \leq \min_{\boldsymbol{x}}{P_G(\boldsymbol{x})} \leq K + Res_G(\boldsymbol{x})
+		%
+		\end{equation}
+S'il existe une affectation $\boldsymbol{x_0}$ telle que $Res_G(\boldsymbol{x_0})=0$ alors $P_G(\boldsymbol{x_0})=\min_{\boldsymbol{x}}{P_G(\boldsymbol{x})}=K$. L'algorithme Maxflow cherche donc à résoudre un problème maximisation-minimisation : maximisation de la borne $K$ et minimisation de la posiforme $Res$. La question est de savoir si à l'issue des différents poussages de flot, il existe une configuration qui annule la posiforme résiduelle et comment trouver une telle affectation.
+	
+	Pour rechercher les chemins augmentant l'algorithme le plus simple procède de la manière suivante : deux arbres de recherches sont construits, l'un partant de la sources en s'écoulant dans le graphe et l'autre partant du puits qui remonte dans le graphe. Dès qu'un nœud se trouve dans les deux arbres à la fois, un chemin augmentant est trouvé, et un flot est poussé. L'étape est répétée jusqu'à ce qu'il n'y ai plus de nouveau chemin augmentant. Le temps de convergence est fini pour des capacités entières. Il est possible que le temps de convergence soit infini lorsque les capacités sont réelles. A l'issue de ces étapes aucun nœud n'est atteignable à la fois de la source et du puits. Les nœuds peuvent être classés en trois catégories : atteignable depuis la source notée $\boldsymbol{\mathcal{S}^{*}}$ , depuis le puits $\boldsymbol{\mathcal{T}^{*}}$, depuis aucun des deux $\boldsymbol{\blacklozenge}$. Affecter le premier groupe $\boldsymbol{\mathcal{S}^{*}}$ à $\boldsymbol{\mathcal{S}}$ ($x=0$) et le second $\boldsymbol{\mathcal{T}^{*}}$ à $\boldsymbol{\mathcal{T}}$ ($x=1$) ne coûte rien. De même affecter les nœuds du troisième groupe $\boldsymbol{\blacklozenge}$ tous à $\boldsymbol{\mathcal{S}}$ ou tous à $\boldsymbol{\mathcal{T}}$ ne coûte rien. Il existe donc deux affectations qui annulent la posiforme résiduelle qui sont déduites directement du graphe résiduel,
+	\begin{equation}
+	Coupe(\{\boldsymbol{\mathcal{S^{*}}},\boldsymbol{\blacklozenge}\},\boldsymbol{\mathcal{T^{*}}}) = Coupe(\boldsymbol{\mathcal{S^{*}}},\{\boldsymbol{\blacklozenge},\boldsymbol{\mathcal{T^{*}}}\}) = \min_{\boldsymbol{x}}{P_G(\boldsymbol{x})}	
+	\end{equation}
+Les deux coupes minimales du graphe sont représentées dans la~Figure \ref{fig:2_coupes}. A titre d'exemple, le poussage de flot de la fonction de l'équation \ref{eq:fonction_exemple_1} est décrit sous la forme de graphe dans la Figure \ref{sf:maxflow_exemple}. A l'issue du poussage de flot sur ces graphes, aucun nœuds ne peut être atteint depuis la source ou depuis le puits. Ils peuvent être affectés tous à la source ou tous au puits. Il est à noter que l'on n'obtient que deux solutions parmi les trois possibles.
+
+	\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=4cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=30pt}]
+  
+  	\node[main node] (1) {$\boldsymbol{\mathcal{S}}$};
+  	\node[main node] (2) [below right of=1] {$\boldsymbol{\blacklozenge}$};
+  	\node[main node] (3) [above right of=2] {$\boldsymbol{\mathcal{T}}$};
+  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	
+  	(3) edge node [right] {} (1)
+  	(3) edge node [right] {} (2)
+  	(2) edge node [right] {} (1);
+
+	\draw[thick,densely dashed,-] (1.5,1) -- (1.5,-4);
+	\draw[thick,densely dashed,-] (4,1) -- (4,-4);
+
+\end{tikzpicture}
+\end{center}
+\caption{Schéma d'un graphe après poussage de flot et deux coupes minimales.}
+\label{fig:2_coupes}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\subfigure[Graphe initial]{\label{fig:sub1}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	(4) edge node [above left] {$2$} (1)
+  	(1) edge [bend right] node[left] {$2$} (2)
+  	(2) edge [bend right] node[left] {$2$} (3)
+  	(2) edge node [above] {$1$} (5)
+  	(3) edge node [below right] {$1$} (5);
+\end{tikzpicture}
+}
+\subfigure[Graphe résuduel après poussage de flot]{\label{fig:sub2}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	(2) edge [bend right] node[left] {$1$} (3)
+  	(2) edge [bend right] node[right] {$2$} (1)
+  	(3) edge [bend right] node[right] {$1$} (2);
+  	
+  	\path[dotted]
+  	(4) edge node [above left] {} (1)
+  	(1) edge [bend right] node[left] {} (2)
+  	(2) edge node [above] {} (5)
+  	(3) edge node [below right] {} (5);
+  	
+  	\draw[thick,densely dashed,-] (-1.7,0) -- (-1.7,-6);
+  	\draw[thick,densely dashed,-] (1.7,0) -- (1.7,-6);
+  	\draw[thick,densely dashed,-] (1.5,0) -- (1.5,-0.5) -- (-1.5,-2.5) -- (-1.5,-6);
+
+\end{tikzpicture}
+}
+\caption{Exemple d'un graphe avec trois coupes minimales. Les coupes minimale du graphe sont des coupes nulles du graphe résiduel (cf.~Partie~\ref{sss:min_max})}
+\label{fig:test}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\subfigure[$2x + \bar{y} + z + 2\bar{x}y + 2\bar{y}z$]{\label{sf:maxflow_exemple_1}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.1pt,auto,node distance=2cm, thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt,font=\sffamily\small}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	\path[every node/.style={font=\sffamily\footnotesize}]
+  	(4) edge node [above left] {$2$} (1)
+  	(1) edge [bend right] node[left] {$2$} (2)
+  	(2) edge [bend right] node[left] {$2$} (3)
+  	(2) edge node [above] {$1$} (5)
+  	(3) edge node [below right] {$1$} (5);
+
+\end{tikzpicture}}
+\hfill
+\subfigure[$\color{red} x + \bar{x}y + \bar{y} \color{black} + x + \bar{z} + \bar{x}y + 2\bar{y}z $]{\label{sf:maxflow_exemple_2}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.1pt,auto,node distance=2cm, thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt,font=\sffamily\small}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	\path[every node/.style={font=\sffamily\footnotesize}]
+  	(4) edge node [above left] {$1/\color{red}1$} (1)
+  	(1) edge [bend right] node[below left] {$1/\color{red}1$} (2)
+  	(2) edge [bend right] node[left] {$2$} (3)
+  	(2) edge node [above] {$\color{red}1$} (5)
+  	(3) edge node [below right] {$1$} (5);
+
+\end{tikzpicture}}
+\hfill
+\subfigure[$\color{red} 1+ \bar{y}x \color{black} + x + \bar{z} + \bar{x}y + 2\bar{y}z $]{\label{sf:maxflow_exemple_3}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.1pt,auto,node distance=2cm, thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt,font=\sffamily\small}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	
+  	\path[every node/.style={font=\sffamily\footnotesize}]
+  	(4) edge node [above left] {$1$} (1)
+  	(1) edge [bend right] node[below left] {$1$} (2)
+  	(2) edge [bend right] node[right] {$\color{red} 1$} (1)
+  	(2) edge [bend right] node[left] {$2$} (3)
+  	(3) edge node [below right] {$1$} (5);
+  	
+  	\path[dotted]
+  	(2) edge node [above left] {} (5);
+
+\end{tikzpicture}}
+
+\vskip\baselineskip
+
+\subfigure[$\color{red} x + \bar{x}y + \bar{y}z + \bar{z} \color{black} + 1 + \bar{y}x + \bar{y}z$]{\label{sf:maxflow_exemple_4}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.1pt,auto,node distance=2cm, thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt,font=\sffamily\small}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	
+  	\path[every node/.style={font=\sffamily\footnotesize}]
+  	(4) edge node [above left] {$\color{red} 1$} (1)
+  	(1) edge [bend right] node[below left] {$\color{red} 1$} (2)
+  	(2) edge [bend right] node[right] {$1$} (1)
+  	(2) edge [bend right] node[left] {$1/\color{red}1$} (3)
+  	(3) edge node [below right] {$\color{red}1$} (5);
+  	
+  	\path[dotted]
+  	(2) edge node [above left] {} (5);
+
+\end{tikzpicture}}
+\hfill
+\subfigure[$\color{red} 1 + \bar{y}x + \bar{z}y \color{black} + 1 + \bar{y}x + \bar{y}z$]{\label{sf:maxflow_exemple_5}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.1pt,auto,node distance=2cm, thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt,font=\sffamily\small}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	
+  	\path[every node/.style={font=\sffamily\footnotesize}]
+  	(2) edge [bend right] node[right] {$1/\color{red}1$} (1)
+  	(2) edge [bend right] node[left] {$1$} (3)
+  	(3) edge [bend right] node[right] {$\color{red}1$} (2);
+  	
+  	\path[dotted]
+  	(4) edge node [above left] {} (1)
+  	(1) edge [bend right] node[below left] {} (2)
+  	(2) edge node [above left] {} (5)
+  	(3) edge node [below right] {} (5);
+  	
+  	
+\end{tikzpicture}}
+\hfill
+\subfigure[$2 + 2\bar{y}x + \bar{z}y + \bar{y}z $]{\label{sf:maxflow_exemple_6}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.1pt,auto,node distance=2cm, thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt,font=\sffamily\small}]
+  	
+  	\node[main node] (1) {$\mathcal{X}$};
+  	\node[main node] (2) [below of=1] {$\mathcal{Y}$};
+  	\node[main node] (3) [below of=2] {$\mathcal{Z}$};
+  	\node[main node] (4) [left of=2] {$\mathcal{S}$};
+  	\node[main node] (5) [right of=2] {$\mathcal{T}$};
+  	
+  	
+  	\path[every node/.style={font=\sffamily\footnotesize}]
+  	(2) edge [bend right] node[right] {$2$} (1)
+  	(2) edge [bend right] node[left] {$1$} (3)
+  	(3) edge [bend right] node[right] {$1$} (2);
+  	
+  	\path[dotted]
+  	(4) edge node [above left] {} (1)
+  	(1) edge [bend right] node[below left] {} (2)
+  	(2) edge node [above left] {} (5)
+  	(3) edge node [below right] {} (5);
+  	
+  	\draw[thick,densely dashed,-, color=red] (-1,0) -- (-1,-4.5);
+	\draw[thick,densely dashed,-,color=red] (1,0) -- (1,-4.5);
+
+\end{tikzpicture}}
+\caption{Exemple de poussage de flot appliqué à la fonction de l’équation \ref{eq:fonction_exemple_1}.}
+\label{sf:maxflow_exemple}
+\end{figure}
+
+\section{Extension de la formulation par coupure de graphe}
+\label{s:GC_ext}
+
+Dans la Partie~\ref{s:GC}, nous avons vu que les $ST$-graphes correspondent à des $FPB$ quadratiques sous-modulaires. Il s'agit d'une limitation dans l'utilisation des graphes, cependant différentes constructions et méthodes ont été proposées afin d'étendre les coupes de graphes à des familles plus larges de problème. Sous certaines conditions, les problèmes multi-labels peuvent être représentés par des graphes et résolus de manière exacte (Partie~\ref{ss::multi_label}). Le cas multi-label peut être traité de manière itérative par une méthode approchée qui consiste à décomposer le problème en sous-problèmes binaires : les fusions binaires (Partie~\ref{ss:fusion_bianire}). Dans le cas non-sous-modulaire, une solution partielle peut être trouvée avec un construction de graphe particulière (Partie~\ref{ss:n_submod}). Enfin les coupures de graphe ont été étendues à des fonctions d'ordre supérieur par réduction d'ordre de la $FPB$ (Partie~\ref{ss:order_red}).
+
+\subsection{Résolution exacte des problèmes multi-label}
+	\label{ss::multi_label}
+
+Nous souhaitons minimiser une énergie multi-label de la forme :
+	\begin{equation}
+	\label{eq:Emulti}
+	E(\boldsymbol{l}) = \sum_{p \in \boldsymbol{I}} D_p(l_p) +  \sum_{(p,q) \in \boldsymbol{N'}} R_{pq}(l_p,l_q)
+	\end{equation}
+	où $\boldsymbol{I}$ est un ensemble de pixels ordonnés, $\boldsymbol{N}$ l'ensemble des couples de pixels voisins de l'image et $\boldsymbol{N'}$ l'ensemble $\{(p,q) \in \boldsymbol{N} | p<q, p\in I ,q \in I\}$, $\boldsymbol{l}$ est un vecteur de labels associés au pixel $p$. $l$ est un label qui prend sa valeur dans $[0,n-1]$, $D_p$ est la fonction d'attache aux données en $p$ et $R_{pq}$ la fonction régularisation entre $p$ et $q$. Sous certaines conditions, un problème multi-label peut être résolue exactement par coupure de graphe comme montré par~\cite{Ishikawa03PAMI}.
+	
+\subsubsection{Représentation du problème par un graphe}
+	Cette construction utilise une représentation des labels à l'aide de variables binaires. Le label attribué à une inconnue $l_p$ est codé par un vecteur binaire $\boldsymbol{x}^p$, chaque variable de ce vecteur est donc notée $x^p_k$ avec $k \in [1,n{-}1]$. Les capacités associé au vecteur $\boldsymbol{x}^p$ sont notées $c^p_{l,m}$ avec $c^{p}_{0,1}$ la capacité de la source vers le premier nœuds et $c^{p}_{n{-}1,n}$ la capacité du dernier nœuds au puits. La valeur du label optimal est donnée par le lieu de coupe du graphe avec le vecteur de nœuds associés aux labels, sous la contrainte que l'intersection entre la coupe et ce vecteur est unique.
+\begin{equation}
+\label{eq:labeling}
+\forall p \in \boldsymbol{I}, \; l_p optimal = l_p \iff  \left\{ \begin{array}{ll} 
+x^p_k = 0 \; \text{si} \; k \leq l_p \\
+x^p_k = 1 \; \text{sinon}
+\end{array} \right.
+\end{equation}
+ Ainsi les configurations réalisables sont de la forme $\boldsymbol{0}^l\cdot\boldsymbol{1}^{n{-}1{-}l}$ où $\boldsymbol{0}^l$ est une chaîne de zéros de taille $l$, $\boldsymbol{1}^{n{-}1{-}l}$ est une chaîne de uns de taille $n{-}1{-}l$. L'opérateur de concaténation est noté "$\cdot$". Les affectations réalisables pour $n=5$ sont données dans la Table~\ref{tab:aff_ish}. Il y a  $2^{n-1}$ configurations binaires du vecteur, on écarte les configurations non-désirées, c'est à dire celles où l'intersection n'est pas unique, en pénalisant les transitions de $1$ vers $0$ dans le sens source/puits du vecteur,
+	\begin{equation}
+		c^{p}_{l+1,l} = \infty, \; \; \forall l \in [1,n-2].
+	\end{equation}
+	Ces termes sont regroupés en un terme de contrainte,
+	\begin{equation}
+	\color{darkgray!90} \text{Contrainte}(\boldsymbol{x}) \color{black} = \infty \sum_{p \in I} \sum_{k=1}^{n-2} \bar{x}^p_{k{+}1}x^p_k
+	\end{equation}
+La structure du graphe présentée dans cette partie diffère de celle décrite dans~\cite{Ishikawa03PAMI}. En effet, une couche de nœuds supplémentaires située entre le premier nœud de chaque vecteur et la source est utilisée~\citep{Ishikawa03PAMI}. Elle est reliée à la source par des liens infinis. Ces nœuds sont donc toujours atteignables depuis la source et n'interviennent pas dans l'optimisation (les variables associées sont constamment égales à zéro) et peuvent être assimilés à la source pour se ramener à la construction décrite ci-après.
+
+Nous cherchons à démonter que pour $v_k$ un vecteur de variables booléennes de taille $k$, en interdisant les transitions de $1$ vers $0$ l'ensemble des vecteurs $v_k$ réalisables est $\{\boldsymbol{0}^{l}\cdot\boldsymbol{1}^{k{-}l}\}$, $l \in [0,k]$.
+\begin{itemize}
+\item Pour $k=1$,
+\begin{itemize}
+\item $x_0=0, v_1 = \boldsymbol{0}^1\cdot\boldsymbol{1}^{1{-}1}$
+\item $x_0=1,v_1 = \boldsymbol{0}^0\cdot\boldsymbol{1}^{1{-}0}$
+\end{itemize}
+\item Si pour un entier $k$, $v_k=\boldsymbol{0}^l\cdot\boldsymbol{1}^{k{-}l}$, $v_{k{+}1} = v_k \cdot x$,
+\begin{itemize}
+\item pour $l=k$,
+\begin{itemize}
+\item $x=0$,$v_{k{+}1}=\boldsymbol{0}^{l{+}1}\cdot\boldsymbol{1}^{k{+}1-(l{+}1)}$
+\item $x=1$,$v_{k{+}1}=\boldsymbol{0}^{l}\cdot\boldsymbol{1}^{k{+}1{-}l}$.
+\end{itemize}
+\item pour $l<k$,
+\begin{itemize}
+\item $x=0$, $v_{k{+}1}$ n'est pas réalisable à cause de la contrainte.
+\item $x=1$, $v_{k{+}1}=\boldsymbol{0}^{l}\cdot\boldsymbol{1}^{k{+}1{-}l}$
+\end{itemize}
+\end{itemize}
+\item En conséquence, par récurrence, pour tout $k \in \mathbb{N}^*$ les vecteurs réalisables sont de la forme $\boldsymbol{0}^{l}\cdot\boldsymbol{1}^{k{-}l}$.
+\end{itemize}
+Inversement, pour tout $k \in \mathbb{N}^*$ tous les vecteurs de la forme $\boldsymbol{0}^{l}\cdot\boldsymbol{1}^{k{-}l}$, $l \in [0,k]$ sont réalisables.
+
+\begin{table}
+\centering
+\begin{tabular}{c|ccccc}
+	l & $0$ & $1$ & $2$ & $3$ & $4$ \\
+	\hline
+	$x_1$ & 1 & 0 & 0 & 0 & 0 \\
+	$x_2$ & 1 & 1 & 0 & 0 & 0 \\
+	$x_3$ & 1 & 1 & 1 & 0 & 0 \\
+	$x_4$ & 1 & 1 & 1 & 1 & 0 \\
+\end{tabular}
+	\caption{Affectations réalisables et valeurs de label associées $l \in [0,4]$, ($n=5$)}
+	\label{tab:aff_ish}
+\end{table} 
+
+Pour toutes les configurations réalisables de $\boldsymbol{x}$, nous cherchons l'égalité en valeur entre la posiforme et l'énergie multi-label correspondante,
+\begin{equation}
+	P_G(\boldsymbol{x}) = E(\boldsymbol{l})
+	 \label{eq:eg_energie}
+\end{equation}
+La forme générale de $P_G(\boldsymbol{x})$ est :
+	\begin{equation}
+	P_G(\boldsymbol{x}) = \sum_{p \in \boldsymbol{I}}{\color{teal} \text{U}_p(\boldsymbol{x}^p)} \color{black} +  \sum_{(p,q) \in \boldsymbol{I}^2, p<q}{\color{red!70} \text{V}_{pq}(\boldsymbol{x}^p,\boldsymbol{x}^q)}\color{black} + \color{darkgray!90} \text{Contrainte}(\boldsymbol{x}) \color{black}
+	\end{equation}
+avec
+\begin{equation}
+\color{teal} \text{U}_p(\boldsymbol{x}^p) \color{black}= \color{teal} c^p_{\emptyset} \color{black} + \color{teal}c^p_0 \color{black} x^p_1 + \sum_{a=1}^{n-2}{ \color{teal}c^p_{a} \color{black} \bar{x}^p_ax^p_{a+1}} + \color{teal} c^p_{n{-}1} \color{black} \bar{x}^p_{n-1}
+\end{equation}
+et
+\begin{equation}
+\color{red!70} \text{V}_{p,q}(\boldsymbol{x}^p,\boldsymbol{x}^q) \color{black} = \sum_{a=1}^{n-1}{ \sum_{b=1}^{n-1}{ \color{red!70} c_{a,b}^{p,q} \color{black} \bar{x}_{a}^{p}x_{b}^{q} + \color{red!70} c_{b,a}^{q,p} \color{black} \bar{x}_{b}^{q}x_{a}^{p} }} \color{black}
+\end{equation}	
+avec $c^{p,q}_{u,v}$, $(u,v) \in [1,n-1]^2$ la capacité entre le $u$-ième nœuds du vecteur correspondant au pixel $p$ et le $v$-ième nœuds du vecteur correspondant au pixel $q$. Pour toutes les coupes réalisables du graphe, l'équation (\ref{eq:eg_energie}) devient,
+\begin{equation}
+\label{coupe_ish}
+\begin{aligned}
+	E(\boldsymbol{l}) = \sum_{p \in \boldsymbol{I}}{\color{teal}c^{p}_{\emptyset} \color{black} + \color{teal} c^{p}_{l_p,l_{p+1}}\color{black}} + \sum_{(p,q) \in \boldsymbol{N}, p > q} \sum_{a=1}^{l_p} \sum_{b=l_q+1}^{n-1}{\color{red!70}c^{p,q}_{a,b} \color{black} + \sum_{a=l_p+1}^{n-1} \sum_{b=1}^{l_q} \color{red!70} c^{q,p}_{b,a} \color{black}}
+\end{aligned}
+\end{equation}
+La structure de graphe correspondant est données dans la Figure~\ref{fig:graph_ish_gen}.
+
+\begin{figure}[h!]
+\centering
+\input{../figures/tikz/2_Ish1_0.tikz}
+\caption{Structure de graphe permettant de représenter un problème multi-label, l'exemple correspond à une chaîne de $4$ pixels ($p$, $q$, $r$, $s$) dont les labels prennent des entre $0$ et $4$. Les liens en \color{darkgray!90}gris \color{black} sont des arcs de capacité infinie du terme de contraintes, les liens en \color{teal}bleu \color{black} correspondent aux arcs mis en jeu dans les termes \color{teal}$U$\color{black} de $P_G$ et les liens en \color{red!70}rouge \color{black} correspondent aux arcs en en jeu dans les termes \color{red!70}$V$\color{black} de $P_G$.}
+\label{fig:graph_ish_gen}
+\end{figure}
+
+\subsubsection{Contraintes sur la fonction de régularisation}
+
+Soit $E_{pq}(u,v) = E(\boldsymbol{l})_{l_p{=}u,l_q{=}v}$, par différenciation des énergies les capacités d'un couple d'arcs frères peuvent être isolées
+\begin{equation}
+\color{red!70} c^{pq}_{uv} \color{black} + \color{red!70} c^{qp}_{vu} \color{black} = E_{pq}(u{-}1,v) + E_{pq}(u,v{-}1) - E_{pq}(u,v) -E_{pq}(u{-}1,v{-}1)
+\label{eq:double_dif}
+\end{equation}
+Si $(p,q) \not\in \boldsymbol{N}$, $ \color{red!70} c^{pq}_{uv} \color{black} + \color{red!70}  c^{qp}_{vu} \color{black}=0$ alors $\color{red!70} c^{pq}_{uv} \color{black}=\color{red!70} c^{qp}_{vu} \color{black}=0$ (les capacités sont non-négatives).
+Si $(p,q) \in \boldsymbol{N}$, alors (\ref{eq:double_dif}) se simplifie après substitution dans (\ref{eq:Emulti}) 
+\begin{equation}
+\color{red!70} c^{pq}_{uv} \color{black}+\color{red!70} c^{qp}_{vu} \color{black} = R_{pq}(u{-}1,v) + R_{pq}(u,v{-}1) - R_{pq}(u,v) - R_{pq}(u{-}1,v{-}1)
+\end{equation}
+Les capacités étant des valeurs non négatives, une condition nécessaire pour que l’énergie soit représentable est donc
+\begin{equation}
+0 \leq R_{pq}(u{-}1,v) + R_{pq}(u,v{-}1) - R_{pq}(u,v) - R_{pq}(u{-}1,v{-}1), \; \forall (p,q) \in \boldsymbol{N}
+\end{equation}
+On remarque que la condition ne fait intervenir que la fonction de régularisation. Dans le cas fréquent où $R_{pq}$ est une fonction $r$ de la différence de label $d=l_p-l_q$ alors cette condition se réécrit plus simplement :
+\begin{equation}
+0 \leq r(d{+}1) + r(d{-}1) - 2 r(d)
+\end{equation}
+La convexité de la fonction $r$ est donc une condition suffisante pour que l’énergie soit représentable. Parmi les fonctions régularisations convexes souvent utilisées, la valeur absolue et le carré. Cette condition sur la fonction de régularisation constitue cependant une forte limitation pratique de l'utilisation de cette structure de graphe.
+
+\subsubsection{Construction}
+Il existe de nombreuses constructions équivalentes. On peut jouer sur deux aspects, 1) la balance entre les capacités des arcs frères qui relient deux vecteurs différents, 2) la disposition des coûts qui ne dépendent que d'un label. Nous prendrons les arcs frères entre vecteur de capacité égale,
+\begin{equation}
+\color{red!70} c^{q,p}_{v,u} \color{black} = \color{red!70} c^{p,q}_{u,v} \color{black}  = \frac{1}{2} \left( R_{pq}(u{-}1,v) + R_{pq}(u,v{-}1) - R_{pq}(u,v) - R_{pq}(u{-}1,v{-}1) \right)
+\end{equation}
+La somme de des capacités se simplifie
+\begin{equation}
+\begin{aligned}
+\sum_{b=b_1{+}1}^{b_2}{\color{red!70}c^{p,q}_{a,b} \color{black}} =& \frac{1}{2} \left( \cancel{R_{pq}(a{-}1,b_1{+}1)} + R_{pq}(a,b_1) - \cancel{R_{pq}(a,b_1{+}1)} - R_{pq}(a{-}1,b_1) \right) \\
++& \frac{1}{2} \left( \bcancel{R_{pq}(a{-}1,b_1{+}2)} + \cancel{R_{pq}(a,b_1{+}1)} - \bcancel{R_{pq}(a,b_1{+}2)} - \cancel{R_{pq}(a{-}1,b_1{+}1)} \right) \\
++& \ldots \\
++& \ldots \\
++& \frac{1}{2} \left( R_{pq}(a{-}1,b_2) + \cancel{R_{pq}(a,b_2{-}1)} - R_{pq}(a,b_2) - \cancel{R_{pq}(a{-}1,b_2{-}1)} \right) \\
+=& \frac{1}{2} \left( R_{pq}(a{-}1,b_2) + R_{pq}(a,b_1) - R_{pq}(a,b_2) - R_{pq}(a{-}1,b_1) \right)) \\
+\end{aligned}
+\end{equation}
+En appliquant la double somme,
+\begin{equation}
+\sum_{a=a_1{+}1}^{a_2} \sum_{b=b_1{+}1}^{b_2}{\color{red!70}c^{p,q}_{a,b} \color{black}} = \frac{1}{2} \left( R_{pq}(a_1,b_2) + R_{pq}(a_2,b_1) - R_{pq}(a_1,b_1) - R_{pq}(a_2,b_2) \right))
+\end{equation}
+En remplacement dans (\ref{coupe_ish}),
+\begin{equation}
+\begin{aligned}
+	E(\boldsymbol{l}) =& \sum_{p \in \boldsymbol{I}}{\color{teal}c^{p}_{\emptyset} \color{black} + \color{teal} c^{p}_{l_p,l_{p+1}}\color{black}} + \sum_{(p,q) \in \boldsymbol{N'}} \sum_{a=1}^{l_p} \sum_{b=l_q+1}^{n{-}1}{\color{red!70}c^{p,q}_{a,b} \color{black} + \sum_{a=l_p+1}^{n{-}1} \sum_{b=1}^{l_q} \color{red!70} c^{q,p}_{b,a} \color{black}} \\
+	=& \sum_{p \in \boldsymbol{I}}{\color{teal}c^{p}_{\emptyset} \color{black} + \color{teal} c^{p}_{l_p,l_{p+1}}\color{black}} \\
+	&+ \frac{1}{2} \sum_{(p,q) \in \boldsymbol{N'}}{R_{pq}(0,n{-}1)+R_{pq}(l_p,l_q)-R_{pq}(0,l_q)-R_{pq}(l_p,n{-}1)} \\
+	&+ \frac{1}{2} \sum_{(p,q) \in \boldsymbol{N'}}{R_{pq}(n{-}1,0)+R_{pq}(l_p,l_q)-R_{pq}(n{-}1,l_q)-R_{pq}(l_p,0)}
+\end{aligned}
+\end{equation}
+En remplaçant $E(\boldsymbol{l})$ par son expression (\ref{eq:Emulti}) nous obtenons après simplification l'égalité suivante :
+\begin{equation}
+\begin{aligned}	
+\sum_{p \in \boldsymbol{I}}{\color{teal}c^{p}_{\emptyset} \color{black} + \color{teal} c^{p}_{l_p,l_{p+1}}\color{black}} =& \sum_{p \in \boldsymbol{I}} D_p(l_p) - \frac{1}{2} \sum_{(p,q) \in \boldsymbol{N'}}{R_{pq}(n{-}1,0)+R_{pq}(0,n{-}1)} \\
+	&+ \frac{1}{2} \sum_{(p,q) \in \boldsymbol{N}}{R_{pq}(l_p,0)+R_{pq}(l_p,n{-}1)} 
+\end{aligned}
+\end{equation}
+En séparant les termes qui dépendent de $l_p$ et les termes constants, on obtient les capacités à affecter aux arcs du graphe :
+\begin{equation}
+\begin{aligned}
+\color{teal} c^p_u \color{black} &= k^p_{\emptyset} + D_p(u) + \frac{1}{2} \sum_{q,(p,q) \in \boldsymbol{N}}{ \left( R_{pq}(u,0) + R_{pq}(u,n{-}1)\right)} \\
+\color{teal} c^p_{\emptyset} \color{black} &= {-}k^p_{\emptyset} - \frac{1}{2}\sum_{(p,q) \in \boldsymbol{N'}}{ \left( R_{pq}(n{-}1,0) + R_{pq}(0,n{-}1)\right)}
+\end{aligned}
+\end{equation}
+avec $k^p_{\emptyset}$ une constante qui permet de garantir la positivité des capacités $\color{teal} c^p_u \color{black}$.
+
+La construction d'\cite{Ishikawa03PAMI} met en jeu des arcs supplémentaires qui relient chaque nœuds à la source et au puits. Ainsi les coûts qui dépendent des fonctions $R_{pq}$ dans les capacités $\color{teal} c^p_u \color{black}$ sont transférés sur ces nouveaux arcs. Cette construction met en jeu plus d'arcs mais permet de dissocier les capacités qui correspondent à l'attache aux données et ceux qui correspondent à la régularisation.
+
+\subsubsection{Cas particuliers}
+
+Tout d'abord, considérons des fonctions $D_p$ et $R_{pq}$ non-négatives. Dans le cas très fréquent où $R$ est une fonction $r$ paire de la différence de label $d=u-v$, on a :
+	\begin{equation}
+		\begin{aligned}
+			\color{red!70} c^{p,q}_{u,v} \color{black} &=   \frac{1}{2}\left( r(d+1) + r(d-1) -2r(d) \right) = \Delta^2(d)\\
+			\color{teal}  c^p_{u,u+1} \color{black}  &= D_p(u) + \frac{1}{2} \sum_{q,(p,q) \in \boldsymbol{N}} r(u) + r(n{-}1{-}u) \\
+			\color{teal}  c^p_{\emptyset} \color{black} &= -\sum_{(p,q) \in \boldsymbol{N'}} r(n)+r(0)
+		\end{aligned}
+		\label{eq:constr_ish}
+	\end{equation}
+où  $\Delta^2$ est la moitié de la dérivée seconde de r. En conséquence, une condition suffisante pour que l'énergie soit représentable par un graphe est que la fonction $r$ est convexe. La construction du graphe dans ce cas est représentée sur un graphe à deux labels dans la Figure \ref{fig:graph_ish}.
+
+\begin{figure}[h!]
+\centering
+\hspace*{\fill}
+\subfigure[Termes d'attache aux données et contraintes.]{\input{../figures/tikz/2_Ish1_1.tikz}}
+\hfill
+\subfigure[Termes de régularisation ; les couleurs représente les capacités  : \color{orange} $\Delta^2(0)$ , \color{red} $\Delta^2(1)$ , \color{purple} $\Delta^2(2)$ , \color{violet} $\Delta^2(3)$.]{\input{../figures/tikz/2_Ish1_2.tikz}}
+\hspace*{\fill}
+\caption{Graphe multi-couche pour deux labels prenant leurs valeurs entre $0$ et $4$ avec une fonction de régularisation de la différence de label. Les capacités sont décomposées sur deux graphes différents pour une meilleure lisibilité. L'opérateur $\Delta^2$ de la moitié de la dérivée seconde est définie dans (\ref{eq:constr_ish}).}
+\label{fig:graph_ish}
+\end{figure}
+
+Dans le cas où $r$ est $\lambda$ fois la valeur absolue, le terme $\frac{1}{2} \sum_{(p,q) \in \boldsymbol{N}} r(u) + r(n{-}1{-}u)$ de la capacité $\color{teal}  c^p_{u,u+1} \color{black}$ est constant et égal à $n{-}1$. Cette constante sur chacune des capacités peut être transférée sur le terme constant $c^p_{\emptyset}$ ce qui permet de l'annuler. Après simplification, on a :
+	\begin{equation}
+		\begin{aligned}
+			\color{red!70} c^{pq}_{uu} \color{black} &= \lambda \\
+			\color{red!70} c^{pq}_{uv} \color{black} &= 0 ;\ u \neq v \\
+			\color{teal}  c^p_{u,u+1} \color{black} &= D_p(u) \\
+			\color{teal}  c^p_{\emptyset} \color{black} &= 0.
+		\end{aligned}
+	\end{equation}
+La construction dans ce cas particulier peut être trouvée dans~\cite{Veksler99t}.
+	
+Dans le cas où $r$ est $\lambda$ fois le carré, la construction se simplifie en
+	\begin{equation}
+		\begin{aligned}
+			\color{red!70} c^{pq}_{uv} \color{black} &= \lambda \\
+			\color{teal}  c^p_{u,u+1} \color{black} &= D_p(u) + \frac{\lambda}{2} \sum_{(p,q) \in \boldsymbol{N}} (u^2 + (n-1-u)^2)  \\
+			\color{teal}  c^p_{\emptyset} \color{black} &= -\lambda \sum_{(p,q) \in \boldsymbol{N'}} (n-1)^2.
+		\end{aligned}
+	\end{equation}
+
+
+\subsection{Résolution approchée des problèmes multi-label}
+	\label{ss:fusion_bianire}
+	Nous avons vu dans la partie précédentes qu'un problème multi-label défini par (\ref{eq:Emulti}) ne peut être résolu exactement que pour une classe de fonction de régularisation, c'est pourquoi des méthodes approchées ont été développées pour traiter ce problème. Le principe de ces méthodes est limiter la résolution du problème à un sous-ensemble de solution. Ces sous-problèmes sont appelés fusion binaire.
+	
+	\subsubsection{Fusion binaire}
+	
+	Soit deux vecteurs de labels $\boldsymbol{l^1}$ et $\boldsymbol{l^2}$, on définit le vecteur fusionné $\boldsymbol{l^{1,2}}_{\boldsymbol{x}}$ paramétré par le vecteur de variables booléennes $\boldsymbol{x}$,
+	\begin{equation}
+		\boldsymbol{l^{1,2}}_{\boldsymbol{x}} = \boldsymbol{l^1}.\boldsymbol{x} + \boldsymbol{l^2}.\boldsymbol{\bar{x}}
+	\end{equation}
+	où l'opérateur point "$.$" est le produit terme à terme. Le problème de fusion binaire cherche une affectation minimale $\boldsymbol{x_0}$ telle que 
+	\begin{equation}
+		\begin{aligned}
+		F(\boldsymbol{x_0}) &= \min_{\boldsymbol{x}}{F(\boldsymbol{x})} \\
+		F(\boldsymbol{x}) &=E(\boldsymbol{l^{1,2}}_{\boldsymbol{x}})
+		\end{aligned}
+	\end{equation}
+où $F$ est une fonction pseudo-booléenne. En remplaçant $E$ par son expression (\ref{eq:Emulti}),
+	\begin{equation}
+	\begin{aligned}
+	F(\boldsymbol{x}) =& \sum_{p \in \boldsymbol{I}}{ D(l^{1}_p)x_p + D(l^{2}_p)\bar{x_p}}  \\ 
+	+& \sum_{(p,q) \in \boldsymbol{N'}}{ R(l^{1}_p,l^{1}_q)x_px_q  + R(l^{1}p,l^{2}_q)x_p\bar{x_k} + R(l^{2}_p,l^{1}_q)\bar{x_p}x_q + R(l^{2}_p,l^{2}_q))\bar{x_p}\bar{x_q}} \\
+	=& {Lin}(\boldsymbol{x}) + \sum_{(p,q) \in \boldsymbol{N'}}{ (R(l^{1}_p,l^{1}_q) + R(l^{2}_p,l^{2}_q) - R(l^{1}_p,l^{2}_q) -R(l^{2}_p,l^{1}_q))x_px_q}
+	\end{aligned}
+	\end{equation}
+	où $Lin$ est une forme linéaire. La contrainte de sous-modularité sur la fonction $F$ est alors :
+	\begin{equation}
+	\label{eq:sous_mod_multi}
+	R(l^{1}_p,l^{1}_q) + R(l^{2}_p,l^{2}_q) \leq R(l^{1}_p,l^{2}_q) + R(l^{2}_p,l^{1}_q), \forall (p,q) \in \boldsymbol{N'}
+	\end{equation}
+À partir de la fonction $F$ écrite sous la forme :
+	\begin{equation}
+	\begin{aligned}
+	F(\boldsymbol{x}) =& \sum_{p \in \boldsymbol{I}}{D(l^1_p)x_p + D(l^2_p)\bar{x}_p} \\
+					  &+ \sum_{(p,q) \in \boldsymbol{N'}} -R(l^{2}_p,l^{1}_q) \\
+					  &+ \sum_{(p,q) \in \boldsymbol{N'}} R(l^{1}_p,l^{1}_q)x_p +R(l^{2}_p,l^{1}_q)\bar{x}_p \\
+					  &+ \sum_{(p,q) \in \boldsymbol{N'}} R(l^{2}_p,l^{1}_q)x_j +R(l^{2}_p,l^{2}_q)\bar{x}_q \\
+					  &+ \sum_{(p,q) \in \boldsymbol{N'}}{(R(l^{1}_p,l^{2}_q) + R(l^{2}_p,l^{1}_q - R(l^{1}_p,l^{1}_q) - R(l^{2}_p,l^{2}_q) )x_p\bar{x}_q}
+	\end{aligned}
+	\end{equation}	
+	la construction de graphe associé peut être déduite des règles de la Table~\ref{tab-constr-graph}. La figure \ref{fig:graph_elem_fusion} représente cette construction pour une fonction de deux variables. On peut montrer que la capacité du lien entre deux variables est toujours positive du fait de la contrainte de sous-modularité, les termes linéaires sont positifs moyennant la réécriture suivante :
+	\begin{equation}
+	ax+b\bar{x} = m + (a-m)x + (b-m)\bar{x}
+	\end{equation}
+avec $m=\text{min}(a,b)$.
+	
+	\subsubsection{Changement de variables}
+	Échanger un labels entre $\boldsymbol{l^1}$ et $\boldsymbol{l^2}$ à la position $p$ ne modifie par l'ensemble des solutions réalisables par fusion mais change la condition sur la fonction de régularisation, l'inégalité change de sens
+	\begin{equation}
+	R(l^{1}_p,l^{1}_q) + R(l^{2}_p,l^{2}_q) \geq R(l^{1}_p,l^{2}_q) + R(l^{2}_p,l^{1}_q), \forall (p,q) \in \boldsymbol{N}
+	\end{equation}
+	Échanger un label à la position $p$ revient à substituer $x_p$ par $y_p = \bar{x}_p$. Ainsi par un changement de variable, un problème de fusion non-sous-modulaire peut devenir sous-modulaire. Toutefois trouver dans le cas général un changement de variable qui rendre le problème sous-modulaire est une problème d'optimisation binaire difficile et l’existence d'une solution n'est pas toujours garantie. Par exemple la fonction $F(x_1,x_2,x_3)= x_1x_2  - x_2x_3 - x_1x_3$ ne peut pas être rendue sous-modulaire par changement de variable. 
+	
+	
+	%Échanger des variables entre les vecteurs à fusionner ne modifier par le problème de minimisation. Soit un échange de variables entre les vecteurs $\boldsymbol{l^1}$ et $\boldsymbol{l^2}$ codé par le vecteur $\boldsymbol{y}$ et  $\boldsymbol{l^{1'}}$ et $\boldsymbol{l^{2'}}$ les nouveaux vecteurs. On a $\boldsymbol{l^{1'}}=\boldsymbol{l^{1,2}}_{\boldsymbol{y}}$ et $\boldsymbol{l^{2'}}=\boldsymbol{l^{1,2}}_{\boldsymbol{\bar{y}}}$,
+%	\begin{equation}
+%	\begin{aligned}
+%	\boldsymbol{l^{1,2}}_{\boldsymbol{x}} &= \boldsymbol{l^1}.\boldsymbol{x} + \boldsymbol{l^2}.\boldsymbol{\bar{x}} \\
+%	&= \boldsymbol{l^1}.(\boldsymbol{x}\boldsymbol{y} + \boldsymbol{x}\boldsymbol{\bar{y}}) + \boldsymbol{l^2}.(\boldsymbol{\bar{x}}\boldsymbol{y} + \boldsymbol{\bar{x}}\boldsymbol{\bar{y}}) \\
+%	&= \boldsymbol{l^1}.(\boldsymbol{x}\boldsymbol{y}) + \boldsymbol{l^2}.(\boldsymbol{\bar{x}}\boldsymbol{\bar{y}}) + \boldsymbol{l^1}.(\boldsymbol{x}\boldsymbol{\bar{y}}) + \boldsymbol{l^2}.(\boldsymbol{\bar{x}}\boldsymbol{y}) \\
+%	&= \boldsymbol{l^1}.\boldsymbol{y}.(\boldsymbol{x}\boldsymbol{y}+ \boldsymbol{\bar{x}}\boldsymbol{\bar{y}} ) + \boldsymbol{l^2}.\boldsymbol{\bar{y}}.(\boldsymbol{\bar{x}}\boldsymbol{\bar{y}} + \boldsymbol{x}\boldsymbol{y}) + \boldsymbol{l^1}.\boldsymbol{\bar{y}}.(\boldsymbol{x}\boldsymbol{\bar{y}} + \boldsymbol{\bar{x}}\boldsymbol{y} ) + \boldsymbol{l^2}.\boldsymbol{y}.(\boldsymbol{\bar{x}}\boldsymbol{y} + \boldsymbol{x}\boldsymbol{\bar{y}} ) \\
+%	&= \boldsymbol{l^{1'}}.(\boldsymbol{x}\boldsymbol{y}+ \boldsymbol{\bar{x}}\boldsymbol{\bar{y}} ) +  \boldsymbol{l^{2'}}.(\boldsymbol{x}\boldsymbol{\bar{y}} + \boldsymbol{\bar{x}}\boldsymbol{y})	\\
+%	&= \boldsymbol{l^{1',2'}}_{\boldsymbol{x}\boldsymbol{y}+ \boldsymbol{\bar{x}}\boldsymbol{\bar{y}}}	\\			
+%	\end{aligned}
+%	\end{equation}
+%	L'échange de variable entre les deux vecteurs revient à paramétrer le problème initial : la signification des affectations à zéros ou à un est inversée là où les variables ont été échangées. Ce reparamétrage du problème, appelé échange de variable ("variable swap"), modifie la sous-modularité du problème. En effet, chaque fois qu'une variable est échangée tous ces termes duaux non-sous-modulaire qu'elle met en jeu deviennent sous-modulaire et inversement. Ainsi, un problème non-sous-modulaire peut le devenir à un échange de variable près. Cependant le problème qui consiste à trouver cette nouvelle paramétrisation est aussi un problème booléen de complexité $NP$. 
+
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=4.5cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=0.5pt}]
+  
+  	\node[main node] (1) {$\mathcal{X}^p$};
+  	\node[main node] (3) [below left of=1] {$\mathcal{S}$};
+  	\node[main node] (4) [below right of=1] {$\mathcal{T}$};
+  	\node[main node] (2) [below right of=3] {$\mathcal{X}^q$};
+  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	
+  	(1) edge node [above right] {$D(l^2_p)+R(l^{2}_p,l^{1}_q)$} (4)
+  		edge [bend right=30] node[right] {$\begin{aligned} R(l^{1}_p,l^{2}_q) &+ R(l^{2}_p,l^{1}_q) \\ - R(l^{1}_p,l^{1}_q) &- R(l^{2}_p,l^{2}_q)\end{aligned}$} (2)
+  	(2) edge node [below right] {$D(l^2_q)+R(l^{2}_p,l^{2}_q))$} (4)
+  	(3) edge node [above left] {$D(l^1_p)+R(l^{1}_p,l^{1}_q)$} (1)
+  		edge node [below left] {$D(l^1_q)+R(l^{2}_p,l^{1}_q))$} (2);
+  		
+\end{tikzpicture}
+\end{center}
+\caption{Graphe élémentaire pour une fusion binaire, la valeur de la coupe est égal à la valeur de l’énergie à la constante $R(l^{2}_p,l^{1}_q)$ près.}
+\label{fig:graph_elem_fusion}
+\end{figure}
+
+\subsubsection{Cas de la fusion ternaire}
+	Le problème que l'on cherche à résoudre est une fusion ternaire avec trois propositions pour chaque label. Les variables sont réarrangées pour que l'une des propositions notée $\boldsymbol{l^+}$ majore les autres et une autre $\boldsymbol{l^-}$ minore les deux autres. La dernière est notée $\boldsymbol{l^0}$. Il s'agit d'un problème multi-label limité à 3 labels. La construction de graphe correspondante revient à celle décrite dans le cas multi-label (Partie \ref{ss::multi_label}), en restreignant les labels possibles, ce qui donne la construction de graphe donnée dans la figure \ref{fig:graph_ele_tern}.
+
+On peut définir le saut ternaire où $\boldsymbol{l^+}$ (et $\boldsymbol{l^-}$) sont la solution courante à laquelle on a ajouté (retranché) la constante $\delta$ sur chaque label. La saut ternaire $-1/+1$ permet alors une descente de gradient de l’énergie simultanée sur toutes les variables.
+
+\begin{figure}
+\begin{center}
+\input{../figures/tikz/2_Ternaire.tikz}
+\end{center}
+\caption{Graphe élémentaire pour un saut ternaire, à la constante $-R(l_x^-,l_y^-)$ près}
+\label{fig:graph_ele_tern}
+\end{figure}
+
+\subsection{Minimisation approchée des fonctions quadratiques (QPBO)}
+	\label{ss:n_submod}
+	Nous avons vu que l’énergie d'un problème doit pouvoir s’écrire sous la forme d'une fonction pseudo-booléenne quadratique sous-modulaire pour pouvoir être représentable par un graphe et ainsi être résolu par coupure de graphe. Est-il possible de construire un graphe pour approcher le minimum d'une $FPB$ quadratique non-sous-modulaire ?
+	
+	\subsubsection{Roof duality}
+	Dans (\ref{min_max_sousmod}), le problème Maxflow est écrit sous la forme d'une minimisation-maximisation. Prenons maintenant $P$ une posiforme quelconque, $Res$ est obtenu par recherche de chemin augmentant :
+	\begin{equation}
+		\label{min_max_sousmod2}
+		%
+			K \leq \min_{\boldsymbol{x}}{P(\boldsymbol{x})} \leq K + Res(\boldsymbol{x})
+		%
+	\end{equation}
+	Dans ce cas plus général, il n'y a pas de garantie que la constante $K$ atteigne le minimum et la minimisation de la fonction $Res$, qui est elle aussi quelconque, n'est pas forcement évidente. La méthode proposée est d'approcher la fonction $P(\boldsymbol{x})$ par une fonction $G(\boldsymbol{x},\boldsymbol{y})$ quadratique telle que $G(\boldsymbol{x},\bar{\boldsymbol{x}})=P(\boldsymbol{x})$, qui minore $P(\boldsymbol{x})$
+	\begin{equation}
+	\label{graph:interval}
+		\min_{\boldsymbol{x},\boldsymbol{y}}{G(\boldsymbol{x},\boldsymbol{y})} \leq  \min_{\boldsymbol{x}}{P(\boldsymbol{x})}
+	\end{equation} 
+	Minimiser $G$ donne une borne minimale à la fonction $F$. Nous imposons maintenant que $G$ soit sous-modulaire. Nous pouvons trouver deux vecteurs $(\boldsymbol{x^0},\boldsymbol{y^0})$ qui minimise $G$ :
+	\begin{equation}
+		\min_{\boldsymbol{x},\boldsymbol{y}}{G(\boldsymbol{x},\boldsymbol{y})} = K' + Res(\boldsymbol{x^0},\boldsymbol{y^0}) = K'
+	\end{equation}
+	L'écart $RD$ entre le minimum de la fonction $G$ et le minimum de la fonction $P$ est appelé "roof duality" :
+	\begin{equation}
+	\begin{aligned}
+		RD &= \min_{\boldsymbol{x}}{P(\boldsymbol{x})}-\min_{\boldsymbol{x},\boldsymbol{y}}{G(\boldsymbol{x},\boldsymbol{y})} \\
+		&= \min_{\boldsymbol{x}}{Res(\boldsymbol{x},\boldsymbol{\bar{x}})}
+	\end{aligned}
+	\end{equation}
+En conséquence $RD=0$ si est seulement si une des affectations minimales de $G$ respecte la contrainte $\boldsymbol{y_0}~=~\boldsymbol{\bar{x_0}}$. Nous cherchons parmi les fonctions $G$ celle qui minimise la valeur de $RD$, ce qui revient à chercher la fonction dont le minimum est maximal. Dans la pratique, le minimum n'est pas toujours disponible, c'est donc une borne inférieure $b_{min}$ qui est maximisée :
+	\begin{equation}
+		\max_{G,b_{min}}{b_{min}} \; \; \text{sous les contraintes}, \left\{
+		\begin{aligned}
+			G(\boldsymbol{x},\boldsymbol{y})  \geq b_{min}, \forall (\boldsymbol{x},\boldsymbol{y}) \\
+			G(\boldsymbol{x},\bar{\boldsymbol{x}}) =P(\boldsymbol{x}), \forall \boldsymbol{x} \\
+			G \text{ sous-modulaire} \\
+		\end{aligned}
+		\right.
+		\label{eq:relax_sousmod}
+	\end{equation}	
+	
+	\subsubsection{Symétrie}
+\cite{Kahl12DAM} donnent les propriétés des fonctions qui sont solution du problème (\ref{eq:relax_sousmod}). L'une d'entre elle est la symétrie. On décompose la fonction $G$ en une composante symétrique et une composante asymétrique. 
+		\begin{equation}
+		\begin{aligned}
+		G(\boldsymbol{x},\boldsymbol{y}) &= Sym(\boldsymbol{x},\boldsymbol{y}) + Assym(\boldsymbol{x},\boldsymbol{y}) \\
+		Sym(\boldsymbol{x},\boldsymbol{y}) &= \frac{1}{2}(G(\boldsymbol{x},\boldsymbol{y}) + G(\boldsymbol{\bar{y}},\boldsymbol{\bar{x}})) \\
+		Assym(\boldsymbol{x},\boldsymbol{y}) &= \frac{1}{2}(G(\boldsymbol{x},\boldsymbol{y}) - G(\boldsymbol{\bar{y}},\boldsymbol{\bar{x}}))		
+		\end{aligned}
+	\end{equation}
+On remarque que les fonctions symétriques majorent les fonctions qui possèdent une partie asymétriques.
+	\begin{equation}
+		G(\boldsymbol{\bar{y}},\boldsymbol{\bar{x}}) = G(\boldsymbol{x},\boldsymbol{y}) - 2Assym(\boldsymbol{x},\boldsymbol{y})
+	\end{equation}	
+Ainsi, nous nous restreignons aux fonctions symétriques
+	\begin{equation}
+		G(\boldsymbol{x},\boldsymbol{y}) = G(\boldsymbol{\bar{y}},\boldsymbol{\bar{x}})
+	\end{equation}
+	Avec $G$ symétrique et sous-modulaire (\ref{eq:sous_mod_bin}) on a :
+	\begin{equation}
+	\begin{aligned}
+	G(\boldsymbol{x},\boldsymbol{y}) = \frac{1}{2}( G(\boldsymbol{x},\boldsymbol{y}) + G(\boldsymbol{\bar{y}},\boldsymbol{\bar{x}}) ) \geq  & \\ \frac{1}{2} (G(\boldsymbol{x} \vee \boldsymbol{\bar{y}}, \boldsymbol{\bar{x}} \vee \boldsymbol{y}) & + G(\boldsymbol{x} \wedge \boldsymbol{\bar{y}}, \boldsymbol{\bar{x}} \wedge \boldsymbol{y}) ) = G(\boldsymbol{x} \wedge \boldsymbol{\bar{y}}, \boldsymbol{\bar{x}} \wedge \boldsymbol{y})
+	\end{aligned}
+	\label{eq:bi_sub}
+	\end{equation}
+Cela signifie que remplacer $(\boldsymbol{x},\boldsymbol{y})$ par $(\boldsymbol{x} \wedge \boldsymbol{\bar{y}}, \boldsymbol{\bar{x}} \wedge \boldsymbol{y})$ permet de diminuer l’énergie. Cette opération consiste à remplacer les couples d'affectation $(1,1)$ par $(0,0)$ comme nous pouvons le voir dans la table de vérité Tab~\ref{tab:wedge1}. De plus si l'affectation $(\boldsymbol{x},\boldsymbol{y})$ est minimale, l'affectation $(\boldsymbol{x} \wedge \boldsymbol{\bar{y}}, \boldsymbol{\bar{y}} \wedge \boldsymbol{x})$ est elle aussi minimale. Nous pouvons donc restreindre la recherche du minimum de $G$ aux vecteurs d'affectations $(0,0)$, $(0,1)$ et $(1,0)$.
+	\begin{table}
+	\centering
+	\begin{tabular}{c|cc}
+ 	  $(\boldsymbol{x} \wedge \boldsymbol{\bar{y}}, \boldsymbol{\bar{y}} \wedge \boldsymbol{x})$    & 0 & 1 	\\ \hline
+ 	 0 & (0,0) & (0,1) \\
+ 	 1 & (1,0) & (0,0) \\
+	\end{tabular}
+	\caption{L'expression $(\boldsymbol{x} \wedge \boldsymbol{\bar{y}}, \boldsymbol{\bar{y}} \wedge \boldsymbol{x})$ remplace l’affection $(x,y)=(1,1)$ par $(x,y) =(0,0)$.}
+	\label{tab:wedge1}
+	\end{table}
+	
+	\begin{table}
+	\centering
+	\begin{tabular}{c|cccc}
+ 	  $ (\boldsymbol{x_1},\boldsymbol{y_1}) \sqcup (\boldsymbol{x_2},\boldsymbol{y_2})$    & (0,0) & (0,1) & (1,0) & (1,1)	\\ \hline
+ 	 (0,0) & (0,0) & (0,1) & (1,0) & (0,0)	\\
+ 	 (0,1) & (0,1) & (0,1) & (0,0) & (0,0)	\\
+ 	 (1,0) & (1,0) & (0,0) & (1,0) & (0,0)	\\
+ 	 (1,1) & (0,0) & (0,0) & (0,0) & (0,0)	\\
+	\end{tabular}
+	\caption{Table de vérité de l'opérateur $\sqcup$. Les coupe d'affectation $(1,1)$ mis en jeu sont remplacées par $(0,0)$.}
+	\label{tab:wedge2}
+	\end{table}
+	
+	\subsubsection{Autarcie et persistance}
+	Soit $(\boldsymbol{x^{opt}},\boldsymbol{y^{opt}})$ une affectation minimale de $G$ et $\boldsymbol{x}$ une affectation quelconque, on définit le vecteur $\boldsymbol{x'}$ tel que :
+	\begin{equation}
+	\label{eq:transfo_00_11}
+		x'_i=\left\{ \begin{array}{ll}
+		x_i & \textrm{si $x^{opt}_i=y^{opt}_i$}\\
+		x^{opt}_i & \textrm{sinon} \\
+		\end{array} \right.
+	\end{equation}
+	La propriété d’autarcie est que $F(\boldsymbol{x'}) \leq F(\boldsymbol{x})$. La propriété de persistance est que si $\boldsymbol{x}$ minimise $F$ alors $\boldsymbol{x'}$ minimise $F$. L'autarcie implique donc la persistance. Une conséquence de cette propriété est que les éléments de $(\boldsymbol{x^{opt}},\boldsymbol{y^{opt}})$ qui sont $(0,1)$ et $(1,0)$ donne une affectation partielle des affectations minimales de $F$.
+	
+	\cite{Kahl12DAM} donnent la démonstration de cette propriété lorsque la fonction $G$ est symétrique et sous-modulaire. On définit les vecteurs $\boldsymbol{x^*}$ et $\boldsymbol{y^*}$ tels que $(\boldsymbol{x^*},\boldsymbol{y^*}) = (\boldsymbol{x^0} \vee \boldsymbol{\bar{y}^{opt}}, \boldsymbol{\bar{x}^{opt}} \vee \boldsymbol{y^{opt}}   )$, d'après (\ref{eq:bi_sub}), $\boldsymbol{x^*},\boldsymbol{y^*}$ est aussi une affectation minimale. Pour écrire cette transformation en opérations booléennes, on définit l'opérateur notée $\sqcup$ tel que
+	\begin{equation}
+		(\boldsymbol{x_1},\boldsymbol{y_1}) \sqcup (\boldsymbol{x_2},\boldsymbol{y_2}) = ( (\boldsymbol{x_1} \vee \boldsymbol{x_2}) \wedge \overline{(\boldsymbol{y_1} \vee \boldsymbol{y_2})}, (\boldsymbol{y_1} \vee \boldsymbol{y_2}) \wedge  \overline{(\boldsymbol{x_1} \vee \boldsymbol{x_2})} ) 
+	\end{equation}
+	La table de vérité de cette transformation est donnée la Table~\ref{tab:wedge2}. Cette opérateur remplace les couple $(1,1)$ par $(0,0)$. En prenant $y_1=\bar{x_1}$, on obtient la transformation décrite en (\ref{eq:transfo_00_11}). Ainsi l'affectation $\boldsymbol{x'}$ s'écrit,
+	\begin{equation}
+	(\boldsymbol{x'},\boldsymbol{\bar{x}'})= ((\boldsymbol{x},\boldsymbol{\bar{x}}) \sqcup (\boldsymbol{x^*},\boldsymbol{y^*})) \sqcup (\boldsymbol{x^*},\boldsymbol{y^*})
+	\end{equation}
+Or $G$ étant sous-modulaire, par définition :
+	\begin{equation}
+		G(\boldsymbol{x},\boldsymbol{\bar{x}}) + G(\boldsymbol{x^*},\boldsymbol{y^*}) \geq G(\boldsymbol{x} \vee \boldsymbol{x^*} ,\boldsymbol{\bar{x}} \vee \boldsymbol{y^*}) + G(\boldsymbol{x} \wedge \boldsymbol{x^*} ,\boldsymbol{\bar{x}} \wedge \boldsymbol{y^*})
+	\end{equation}
+	$G(\boldsymbol{x^*},\boldsymbol{y^*})$ est minimal et $G$ est symétrique d'où :
+	\begin{equation}
+	G(\boldsymbol{x},\boldsymbol{\bar{x}}) \geq G(\boldsymbol{x} \vee \boldsymbol{x^*} ,\boldsymbol{\bar{x}} \vee \boldsymbol{y^*}) \label{eq:sub_mod_G}
+	\end{equation}
+	En appliquant l'inégalité (\ref{eq:sub_mod_G}) sur le terme de droite on obtient :
+	\begin{equation}
+	G(\boldsymbol{x} \vee \boldsymbol{x^*} ,\boldsymbol{\bar{x}} \vee \boldsymbol{y^*}) \geq G( (\boldsymbol{x} \vee \boldsymbol{x^*}) \wedge \overline{(\boldsymbol{\bar{x}} \vee \boldsymbol{y^*})}, (\boldsymbol{\bar{x}} \vee \boldsymbol{y^*}) \wedge  \overline{(\boldsymbol{x} \vee \boldsymbol{x^*})} ) = G((\boldsymbol{x},\boldsymbol{\bar{x}}) \sqcup (\boldsymbol{x^*},\boldsymbol{y^*}))
+	\end{equation}
+	Ainsi appliquer l'opérateur d'union $\sqcup$ par $(\boldsymbol{x^*},\boldsymbol{y^*})$ diminue l’énergie, en appliquant cette opération deux fois on obtient,
+	\begin{equation}
+	G(\boldsymbol{x},\boldsymbol{\bar{x}}) \geq G( (\boldsymbol{x},\boldsymbol{\bar{x}}) \sqcup (\boldsymbol{x^*},\boldsymbol{y^*})) \sqcup (\boldsymbol{x^*},\boldsymbol{y^*})) = G(\boldsymbol{x'},\boldsymbol{\bar{x}'})
+	\end{equation}
+	d'où,
+	\begin{equation}
+	 	F(\boldsymbol{x}) \geq F(\boldsymbol{x'})
+	\end{equation}
+	La propriété de persistance de la fonction $F$ implique que la solution partielle obtenue par la minimisation de $G$ est une affectation d'un sous ensemble de variable commune à toutes des affectations minimales de $F$. Ainsi l'enjeu est de trouver une fonction $G$ qui donne le solution la plus complète. Lorsque $RD=0$ la taille de l'affectation donnée par $G$ est la plus complète. Ainsi en principe minimiser $RD$ permet d'obtenir une solution plus complète. Toutefois pour une même borne de $RD$, le solution partielle peut être plus ou moins complète comme l'illustre la Figure~\ref{fig:2relax}.
+
+\begin{figure}
+\centering
+\hspace*{\fill}%
+\subfigure[$G_1(x_1,x_2,y_1,y_2)=x_1\bar{y}_2+x_2\bar{y}_1 + x_1\bar{x}_2 + y_2\bar{y}_1$]{
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=2cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt}]
+    
+    \node[main node] (5) {$S$};
+  	\node[main node] (1) [above right of=5] {$X_1$};
+  	\node[main node] (2) [below right of=5] {$X_2$};
+  	\node[main node] (3) [right of=1] {$Y_1$};
+  	\node[main node] (4) [right of=2] {$Y_2$};
+  	\node[main node] (6) [below right of=3] {$T$};
+  	
+  	  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	
+  	(1)  edge node [right] {} (4)
+  	(2)  edge node [right] {} (3)
+  	(1)  edge node [right] {} (2)
+  	(4)  edge node [right] {} (3);
+
+\end{tikzpicture}}
+\hfill
+\subfigure[$G_2(x_1,x_2,y_1,y_2)=x_1+\bar{y}_1$]{
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=2cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt}]
+    
+    \node[main node] (5) {$S$};
+  	\node[main node] (1) [above right of=5] {$\mathcal{X}_1$};
+  	\node[main node] (2) [below right of=5] {$\mathcal{X}_2$};
+  	\node[main node] (3) [right of=1] {$\mathcal{Y}_1$};
+  	\node[main node] (4) [right of=2] {$\mathcal{Y}_2$};
+  	\node[main node] (6) [below right of=3] {$T$};
+  	
+  	  	
+  	\path[every node/.style={font=\sffamily\small}]
+  	
+  	(5)  edge node [right] {} (3)
+  	(1)  edge node [right] {} (6); 
+
+\end{tikzpicture}}
+\hspace*{\fill}%
+\caption{$F(x_1,x_2)=x_1x_2+x_1\bar{x}_2$ admet $G_1$ et $G2$ comme relaxation qui atteignent la même borne ($RD=0$) mais $G_1$ donne la solution pour $F$ $(\lozenge,\lozenge)$ et $G_1$ donne $(0,\lozenge)$.}
+\label{fig:2relax}
+\end{figure}
+	
+	\subsubsection{QPBO}
+	La construction proposée par \cite{Boros02DAM} connue sous le nom de $QPBO$ (Optimisation de fonction pseudo-booléenne quadratique) donne la meilleur borne $RD$ dans le cas quadratique comme montré dans \cite{Kolmogorov10b} \cite{Kahl12DAM}. Soit une $FPB$ quadratique d'écriture générale,
+	\begin{equation}
+	F(\boldsymbol{x}) = a_{\emptyset} + \sum_{p \in \boldsymbol{I}}{a_ix_p} + \sum_{(p,q) \in \boldsymbol{N}}{a_{pq}^+x_px_q}
+	\end{equation}	
+	réécrit comme la posiforme
+	\begin{equation}
+	P(\boldsymbol{x}) = a_{\emptyset} + \sum_{p \in \boldsymbol{I}}{c_p^{+}x_p} + \sum_{p \in \boldsymbol{I}}{c_{p}^{-}\bar{x}_p} + \sum_{(p,q) \in \boldsymbol{N}}{c_{pq}^+x_px_q} + \sum_{(p,q) \in \boldsymbol{N}}{c_{pq}^-\bar{x}_px_q}
+	\end{equation}
+	avec les valeur $c$ non-négatives et $c_{pq}^{+}=max(a_{pq},0)$ et $c_{pq}^{-}=max({-}a_{pq},0)$.
+	Pour chaque variable $x$, une variable $y$ est introduite. Le couple de variable $(x_u,y_u)$ est représenté par les nœuds $\mathcal{X}_u$ et $\mathcal{Y}_u$. La règle générale de construction pour un terme $c_{uv}$ est un arc $\mathcal{Y}_u\rightarrow \mathcal{X}_v$ et un arc $\mathcal{X}_v \rightarrow Y_u$ de capacité $\frac{a_{uv}}{2}$. Les termes unaires peuvent être interprétés comme des termes faisant intervenir la source ou le puits avec un autre nœud, d'où les règles de la construction du graphe décrites dans la Table~\ref{tab:constr_QPBO}.
+	
+	\begin{table}[hb]
+		\renewcommand{\arraystretch}{1.2}
+		\centering
+		\begin{tabular}{c|c|c}
+			Terme dans la posiforme & Arcs dans le graphe & Capacité \\				
+			\hline
+			$c_p^{+}x_u$ & $\mathcal{S} \rightarrow \mathcal{X}_p,\mathcal{Y}_p \rightarrow \mathcal{T}$ & $c_u^{+}/2$  \\
+			$c_p^{-}\bar{x}_p$ & $\mathcal{S} \rightarrow \mathcal{Y}_p,\mathcal{X}_p \rightarrow \mathcal{T}$ & $c_p^{-}/2$ \\
+			$c_{pq}^{+}\bar{x}_px_q$ & $\mathcal{X}_p \rightarrow \mathcal{X}_p,\mathcal{Y}_p \rightarrow \mathcal{Y}_q$ & $c_{pq}^{+}/2$ \\
+			$c_{pq}^{-}x_px_q$ & $\mathcal{Y}_p \rightarrow \mathcal{X}_q ,\mathcal{X}_p \rightarrow \mathcal{Y}_q$ & $c_{pq}^{+}/2$ \\
+		\end{tabular}
+		\caption{Table de correspondance entre les termes de la posiforme et les arcs dans le graphe QPBO.}
+		\label{tab:constr_QPBO}
+	\end{table}
+	
+	Tous les termes de la posiforme sont dédoublés et disposés de manière symétrique. A l'issue de l'optimisation trois cas sont possibles pour une paire de nœuds,
+	\begin{equation}
+	(\mathcal{X}_p,\mathcal{Y}_p) \in \{(\boldsymbol{\mathcal{S}^*}, \boldsymbol{\mathcal{T}^*}),(\boldsymbol{\mathcal{T}^*}, \boldsymbol{\mathcal{S}^*}),(\blacklozenge, \blacklozenge) \}
+	\end{equation}
+	Dans le cas où le coupe de nœuds est atteignable, si $\mathcal{P} \in \boldsymbol{\mathcal{S}^*}$, $x_p$ est affecté à $0$ inversement si $\mathcal{P} \in \boldsymbol{\mathcal{T}^*}$, $x_p$ est affecté à $0$. Affecter les nœuds non-atteignales tous à la source ou tous au puits, permet de minimiser $G$, cependant comme la contrainte $x=\bar{y}$ n'est pas respectée, il n'y a pas de garantie d'optimalité pour $F$. Néanmoins grâce la propriété de persistance, l'affectation partielle est un sous-ensemble d'affectation minimale.  Si la fonction $F$ est sous-modulaire, alors les variables $x$ et $y$ peuvent être séparées et par symétrie $G(x,y)=\frac{1}{2}(P(x)+P(\bar{y}))=P(x)$. $P(x)$ correspond alors à la construction de la fonction $F$ dans le cas sous-modulaire.
+	
+	\subsubsection{Les heuristiques}
+	Même dans le cas où la $RD$ est minimale, toutes les affectations ne sont pas connues. L'affectation de ces variable a un impacte sur l'optimalité de la solution. Ainsi plusieurs heuristiques ont été utilisées pour diminuer l’énergie de la solution et le nombre de variables non affectées.
+	
+	La méthode la plus simple est d'affecter arbitrairement tout les variable à $0$ ou tous à $1$ dans $F$ (donc à $(0,1)$ et $(1,0)$ dans $G$). Les deux solutions sont minimales dans $G$ mais peuvent avoir des valeurs différentes dans $F$. Une variante est de calculer les deux possibilités et de choisir le minimum des deux. Toutefois lorsque le problème est difficile, de telles approches ne permettent pas minimiser efficacement la fonction. \cite{Woodford09PAMI} proposent de séparer les couples de variables non affectés en composantes connexes comme dans \citep{Billionnet89}, et d'appliquer la méthode précédente sur chaque composante.
+	
+	Une autre approche est de fixer arbitrairement un couple de variable et de renouveler le poussage de flot, et de réitérer l'opération. Ainsi, un nœud ou plus est déterminé à chaque étape. Le résultat obtenu est le minimum du problème initial sous contraintes d'égalité de certaines variables. Si il existe un minimum de $F$ qui respecte ces contraintes, alors l'affectation est minimale autrement la solution est suboptimale.
+	
+	\cite{Boros06}  proposent la technique du "Probe", dont \cite{Rother07CVPR} donnent une implémentation. Le principe est de sélectionner un couple de variable $(x,y)$ dans $G$, de les fixer alternativement à $(0,1)$ et $(1,0)$ et de pousser le flot dans les deux cas. Ainsi de nouveaux couples peuvent être affectés, on s’intéresse à deux cas de figure, 1) un couple de variable possède la même affectation dans les deux cas. Alors cette affectation fait partie du minimum global et ont retire les nœuds correspondant par contraction du graphe, 2) le couple change d'affectation dans les deux cas, il peut avoir le même comportement ou inverse. Si le comportement est inverse, alors la signification de la variable est échangée de sorte l'ensemble de ces couples de variable ont le même comportement dans la solution, et ces nœuds ayant la même affectation sont contractés. De plus une dernière étape de simplifications permet éventuellement de réduire l'amplitude des termes non-sous-modulaires, ce qui en principe augmente le nombre de variables affectées dans la solution.
+
+\subsection{Réduction d'ordre}
+\label{ss:order_red}
+	Les algorithmes présentés précédemment ne traitent que des $FPB$ quadratiques ce qui limite les applications possibles. Toutefois, il est possible de réécrire le problème de minimisation d'une fonction d'ordre supérieur à l'aide d'une fonction quadratique. Une telle réécriture du problème est appelée réduction d'ordre. Commençons par un exemple simple : on veut trouver une fonction quadratique qui égal un terme cubique
+\begin{equation}
+\label{eq-3to2}
+x_{i}x_{j}x_{k}= ax_{i}x_{j} + bx_{j}x_{k} + cx_{i}x_{k} + dx_i + ex_j + dx_k + f
+\end{equation}
+Il y a 8 affectations possibles qui donnent chacune une équation et seulement 7 coefficients à trouver. Le système n'a donc pas de solution générale, ainsi les stratégies de réduction d'ordre doivent aborder le problème différemment. La première stratégie est d'ajouter des variables au problème. La première de ces méthodes, proposée par \cite{Rosenberg75}, est de substituer un couple de variable par une variable additionnelle et une équation de contrainte qui garantit l'égalité entre les anciennes variables à la nouvelle. Les autres méthodes cherchent une fonction quadratique qui partage les mêmes minima que la fonction initiale. Une autre stratégie est d'identifier une configuration non-réalisable de la fonction, et enfin, une autre piste est de rechercher une relaxation quadratique de la fonction d'ordre supérieur.
+
+\subsubsection{Méthode par substitution et équation de contrainte}
+
+Réduire un terme en $xy$ d'un ordre peut être réalisé à l'aide d'une fonction pseudo-booléenne $P(x,y,z)$ qui remplit les conditions :
+\begin{align}
+P(x,y,z)=0 \iff xy=z \\
+P(x,y,z)\geq 0 \iff xy \neq z
+\end{align}
+Les produits de variables $xy$ sont remplacés par $z$ et la posiforme $P$ est ajoutée avec un large coefficient pour forcer l'égalité entre $xy$ et $z$. \cite{Boros02DAM} propose la posiforme,
+\begin{equation}
+P_1(x,y,z)= xy-2xz-2yz+3z
+\end{equation}
+l'un des termes quadratiques a un coefficient positif ainsi $P_1$ n'est pas sous-modulaire. Ainsi la réduction d'un ordre ne préserve pas la sous-modularité. D'autres fonctions $P$ sont possibles, mais aucune n'est sous-modulaire. Dans la pratique, ajouter une fonction non sous-modulaire avec un large coefficient diminue les performances d'optimisation de $QPBO$ (pourcentage de la solution fixée par l'algorithme). Pour cette raisons d'autres techniques sont préférées.
+
+\subsubsection{Méthode de substitution par une fonction équivalente}
+
+La méthode consiste remplacer une terme d'ordre trois par une $FPB$ quadratique d'une variable additionnelle dont le minimum par rapport à cette nouvelle variable est égal au terme initial. Cette approche a été proposée par \cite{Kolmogorov04PAMI}, et \cite{Freedman05CVPR}.
+\begin{equation}
+ax_{i}x_{j}x_{k} = \min_{y}{(aP_2(x_i,x_j,x_k,y))}
+\end{equation}
+Le terme peut donc être remplacée par $P_2$ lors de la minimisation et conserver la solution sur les variables de départ.
+Dan la cas d'une fonction cubique et lorsque le coefficient devant un terme cubique est négatif une réduction possible est,
+\begin{equation}
+\label{eq:red1}
+ax_{i}x_{j}x_{k} = \min_{y}{ay(x_i+x_j+x_k-2)}
+\end{equation}
+Dans le cas où $a$ est positif, l’expression (\ref{eq:red1}) se récrit en fonction de $\bar{x}$ et en remplaçant $\bar{x}$ par $1{-}x$,
+\begin{equation}
+\label{eq:red2}
+ax_{i}x_{j}x_{k} = \min_{y}{a(y(x_i+x_j+x_k-1) + x_ix_j + x_jx_k + x_kx_i + - x - y - z -1)}
+\end{equation}
+A l'aide de ces deux formules, il est possible de réduire itérativement un terme cubique en termes quadratiques. Ces formules peuvent être généralisées à la réduction quadratique d'un terme d'ordre supérieur. Soit un terme d'ordres $d$, la forme linaire $S1$ et la forme quadratique $S2$ :
+\begin{equation}
+	\begin{aligned}
+		S_1 &= \sum_{i=1}^{d}{x_i} \\
+		S_2 &= \sum_{i=1}^{d}{ \sum_{j=i+1}^{d}{x_ix_j}}
+	\end{aligned}
+\end{equation}
+dans le cas où $a$ est négatif, \cite{Freedman05CVPR} proposent une fonction qui n'introduit pas de terme non sous-modulaire,
+\begin{equation}
+	a\prod_{i=1}^{d}{x_i} = \min_{y}{ay(S_1 - (d-1) )}
+\end{equation}
+Dans le cas où $a$ est positif, \cite{Ishikawa11PAMI} propose deux formules de réduction en fonction de la parité de $d$ : quand $d$ est pair
+\begin{equation}
+	a\prod_{i=1}^{d}{x_i} = aS_2 + \min_{y}{a \sum_{i=1}^{d/2-1}{y_i(-2S_1 + 4i -1)}}
+\end{equation}
+et quand d est impair
+\begin{equation}
+	a\prod_{i=1}^{d}{x_i} = aS_2 +  \min_{y}{a \sum_{i=1}^{ (d-3)/2 }{y_i(-2S_1 + 4i -1)} + ay_{(d-1)/2)}(-S_1 +d - 2)}
+\end{equation}
+Ces deux dernières réductions introduisent des termes non sous-modulaires ($aS_2$) et respectivement $d/2-1$ et $(d-3)/2$ variables additionnelles.
+
+\subsubsection{Autres méthodes}
+	Dans \cite{Ishikawa14CVPR} la réduction est réalisée sans ajout de variable, on cherche à identifier des configurations non réalisables de la solution. Il s'agit d'une configuration qui ne fait pas partie d'un minimum global. Il n'est donc plus nécessaire d’égaler la fonction d'origine pour cette configuration. Ainsi l'équation \ref{eq-3to2} doit être respectée sauf dans une configuration. Avec une equation en moins, le système peut posséder une solution et permet de réduire un terme cubique.
+	
+	Dans \cite{Fix11ICCV} et \cite{Boros2014}, les termes ne sont pas réduits un à un, mais par groupe. \cite{Gallagher11CVPR} proposent de choisir entre les différentes formules de réduction et d'optimiser le problème du choix de la réduction selon un critère (minimiser la somme des termes non-sous-modulaires, ou l'amplitude de ces termes).
+	
+	D'autres approches recherchent la "Generalized roof duality" ($GRD$)~\cite{Kahl12DAM}. Cela consiste à relaxer une fonction quelconque par une fonction quadratique sous-modulaire dont la borne inférieure ($RD$) est maximale. Pour une fonction quadratique, l’approche est équivalente à $QPBO$. Pour les ordres supérieurs, le problème devient difficile et des heuristiques ont été proposées pour approcher la $GRD$.
+
+\section{Conclusion}
+	La formulation par coupure de graphe permet de minimiser en temps polynomial une énergie binaire sous-modulaire. Certains problèmes image peuvent être écrit sous cette forme comme  les problèmes multi-label avec une régularisation convexe. Cependant, dans les autres cas le problème doit être approché en le décomposant en sous-problèmes binaires, ce qui fait perdre les garantie d'optimalité sur la solution. Ces problèmes ne sont pas nécessairement sous-modulaires ce qui impose d'utiliser des méthodes approchées telles que $QPBO$. Il est par ailleurs possible de réécrire des fonctions d'ordre élevé à l'aide d'une fonction quadratique, mais l'opération de réduction introduit souvent des termes non-sous-modulaires ce qui réduit d'efficacité de l'optimisation en pratique. En résumé, un problème multi-label d'ordre élevé et non-sous-modulaire peut être résolue par approximation (décomposition en sous-problème binaire, réduction d'ordre, relaxation sous modulaire) sans garantie sur les performances d'optimisation que ce soit en terme de temps de calcul et en terme d'optimalité de la solution.
+
+%\bibliographystyle{unsrt}
+\bibliographystyle{apalike-fr}
+\bibliography{../bibliography/Bib_1}
+
+%----------------------------------------------------------------------------------------
+\end{document}
+%----------------------------------------------------------------------------------------

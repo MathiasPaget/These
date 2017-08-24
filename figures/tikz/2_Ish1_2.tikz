@@ -1,0 +1,51 @@
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3.2cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt}]
+  
+  	\node[main node] (10) {$\mathcal{T}$};
+  	\node[main node] (4) [below left of=10] {$\mathcal{X}^p_4$};
+  	\node[main node] (3) [below of=4] {$\mathcal{X}^p_3$};
+  	\node[main node] (2) [below of=3] {$\mathcal{X}^p_2$};
+  	\node[main node] (1) [below of=2] {$\mathcal{X}^p_1$};
+  	\node[main node] (8) [below right of=10] {$\mathcal{X}^p_4$};
+  	\node[main node] (7) [below of=8] {$\mathcal{X}^q_3$};
+  	\node[main node] (6) [below of=7] {$\mathcal{X}^q_2$};
+  	\node[main node] (5) [below of=6] {$\mathcal{X}^q_1$};  
+  	\node[main node] (9) [below right of=1] {$\mathcal{S}$};
+  	
+  	\path[->,every node/.style={font=\sffamily\Large}, teal]
+  	(9) edge node [below left] {$\frac{r(0)+r(4)}{2}$} (1)
+  	(9) edge node [below right] {$\frac{r(0)+r(4)}{2}$} (5)
+  	(1) edge [bend right=10] node[left] {$\frac{r(1)+r(3)}{2}$} (2)
+  	(2) edge [bend right=10] node[left] {$\frac{r(2)+r(2)}{2}$} (3)
+  	(3) edge [bend right=10] node[left] {$\frac{r(3)+r(1)}{2}$} (4)
+  	(5) edge [bend left=10] node[right] {$\frac{r(1)+r(3)}{2}$} (6)
+  	(6) edge [bend left=10] node[right] {$\frac{r(2)+r(2)}{2}$} (7)
+  	(7) edge [bend left=10] node[right] {$\frac{r(3)+r(1)}{2}$} (8)
+  	(4) edge node [above left] {$\frac{r(4)+r(0)}{2}$} (10)
+  	(8) edge node [above right] {$\frac{r(4)+r(0)}{2}$} (10); 	
+  	
+  	\path[<->,every node/.style={font=\sffamily\small}, orange]
+  	(1) edge node [left] {} (5)
+  	(2) edge node [left] {} (6)
+    (3) edge node [left] {} (7)
+    (4) edge node [left] {} (8);
+
+  	
+  	\path[<->,every node/.style={font=\sffamily\small}, red]
+  	(1) edge node [left] {} (6)
+  	(2) edge node [left] {} (5)
+  	(2) edge node [left] {} (7)
+  	(3) edge node [left] {} (6)
+  	(3) edge node [left] {} (8)
+  	(4) edge node [left] {} (7);
+  	
+  	\path[<->,every node/.style={font=\sffamily\small}, purple]
+  	(1) edge node [left] {} (7)
+  	(2) edge node [left] {} (8)
+  	(3) edge node [left] {} (5)
+  	(4) edge node [left] {} (6);
+  	  	
+  	\path[<->,every node/.style={font=\sffamily\small}, violet]
+  	(1) edge node [left] {} (8)
+  	(4) edge node [left] {} (5);
+\end{tikzpicture}

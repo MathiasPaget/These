@@ -1,0 +1,249 @@
+\documentclass[../main/These_Mathias_Paget.tex]{subfiles}
+
+%----------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------
+
+% TODO : methode d'optimisation, chaine de markov
+
+\chapterwithnonb{Introduction}
+
+\section{Problème image}
+
+\subsection{Modélisation d'un problème image}
+
+Soit un phénomène physique $h$ qui à une entrée $\boldsymbol{\theta}$ associe une sortie $\boldsymbol{\omega}$. Estimer les sorties $\boldsymbol{\omega}$ à partir de l'entrée $\boldsymbol{\theta}$ est appelé problème direct. Estimer l'entrée $\boldsymbol{\theta}$ à partir de la sortie $\boldsymbol{\omega}$ est appelé problème inverse. 
+
+%Les phénomènes $h$ étant supposés causal, le problème direct consiste à faire une prédiction de la sortie et le problème inverse à reconstruire une entrée.
+
+
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}
+	\draw (0,0) node {$h$};
+	\draw (-1,-0.5) -- (-1,0.5) -- (1,0.5) -- (1,-0.5)  -- (-1,-0.5);
+	\draw (-2,0) -- (-1,0);
+	\draw[-triangle 90] (1,0) -- (2,0);
+	\draw (-3,0) node {$\boldsymbol{\theta}$};
+	\draw (3,0) node {$\boldsymbol{\omega}$};
+\end{tikzpicture}
+\end{center}
+\caption{Problème direct : le processus $h$ qui pour une entrée $\boldsymbol{\theta}$ donne une sortie $\boldsymbol{\omega}$}
+\end{figure}
+
+	L’étude du problème direct permet de construire le modèle du phénomène $\hat{h}$. Il est alors possible d'en déduire le modèle inverse $\hat{h}^{-1}$. $\theta$ est alors un paramètre du modèle $\hat{h}^{-1}$ et $\omega$ une observation (ou données). Ainsi le problème image se décompose en deux partir : 1) proposer un modèle $\hat{h}^{-1}$ en étudient le problème direct 2) donner une estimation des paramètres $\hat{\boldsymbol{\theta}}$ à partir des observations $\boldsymbol{\omega}$.
+
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}
+	\draw (0,0) node {$\hat{h}^{-1}$};
+	\draw (-1,-0.5) -- (-1,0.5) -- (1,0.5) -- (1,-0.5)  -- (-1,-0.5);
+	\draw (-2,0) -- (-1,0);
+	\draw[-triangle 90] (1,0) -- (2,0);
+	\draw (-3,0) node {$\boldsymbol{\omega}$};
+	\draw (3,0) node {$\hat{\boldsymbol{\theta}}$};
+\end{tikzpicture}
+\end{center}
+\caption{Processus d'estimation de paramètre à partir des observations $\boldsymbol{\omega}$ et du modèle proposé $\hat{h}^{-1}$}
+\end{figure}
+
+Les paramètres peuvent être vus comme une variable aléatoire et la recherche d'une solution au problème comme la maximisation d'une probabilité. Ainsi la modélisation consiste à déterminer les distributions des probabilités mise en jeu.
+
+\subsection{Estimateur de la solution}
+
+Soit une variable aléatoire $X$ suivant une loi de probabilité $\mathbb{P}(X)$ définie sur l'ensemble $S$, l'espérance de cette variable est
+\begin{equation}
+\mathbb{E}(X) = \sum_{S}{X\mathbb{P}(X)}
+\end{equation}
+dans le cas discret et
+\begin{equation}
+\mathbb{E}(X) = \int_{S}{X\mathbb{P}(X). \, \mathrm{d}X}
+\end{equation}
+dans le cas continu, $\mathbb{P}(X)$ correspond alors à la densité de probabilité. La variance est définie comme l'espérance du carré de l'écart à l'espérance de $X$,
+\begin{equation}
+\mathbb{V}(X) = \mathbb{E}( (X - \mathbb{E}(X))^2)
+\end{equation}
+
+Soit $\pi$ une caractéristique de cette loi, un estimateur $\hat{\pi}$ cherche à déterminer cette valeur à partir de réalisations de la loi. La qualité d'un estimateur est souvent mesurée en fonction de deux critères : le biais et la variance. Le biais $\mathbb{B}$ est l'espérance de l'écart entre d'estimateur et la valeur vraie $\dot{\pi}$ de cette caractéristique,
+\begin{equation}
+\mathbb{B}(\hat{\pi}) = \mathbb{E}(\hat{\pi}) - \dot{\pi}
+\end{equation}
+Si le biais est nul, on parle d'estimateur non-biaisé. Par exemple, la moyenne empirique est un estimateur non-biaisé de l'espérance d'une variable. Ainsi lorsqu'un estimateur est non-biaisé, il tend en moyenne vers la valeur vraie lorsque le nombre d'estimée augmente.
+La variance de d'estimateur est alors
+\begin{equation}
+\mathbb{V}(\hat{\pi}) = \mathbb{E}( (\hat{\pi} - \mathbb{E}(\hat{\pi}))^2)
+\end{equation}
+
+schéma : estimateur faible biais, faible variance
+
+
+\subsubsection{Caractère mal-posé, mal-conditionné des problèmes inverses}
+
+Un problème bien posé est une problème dont il existe une solution unique qui dépend des observation de manière continue. Nous entendons par là, que l'estimation varie progressivement avec une variation progressive des observations sans faire de saut. Dans ce cas, une approche par maximum de vraisemblance (ML) peut être mise en œuvre pour définir la solution. La vraisemblance $\mathbb{P}(\boldsymbol{\omega}|\boldsymbol{\theta})$ est une probabilité conditionnelle qui donne la probabilité que les paramètres prennent certaines valeur en fonction des observations. La solution par maximum de de vraisemblance est celle qui maximise cette probabilité,
+\begin{equation}
+	\hat{\boldsymbol{\theta}}^{ML} = \argmax_{\theta}{\mathbb{P}(\boldsymbol{\omega}|\boldsymbol{\theta})}
+\end{equation}
+
+	La plupart des problèmes image sont mal-posé. Dans le cas où le problème ne possède qu'une solution, le caractère mal-posé vient du mauvais conditionnement du problème. Le conditionnement mesure la sensibilité de l'estimation à une petite variation sur les observation. Le processus $h$ occasionnent souvent des atténuations voire des pertes de sorte que le modèle du problème inverse possède un mauvais conditionnement. Dans ce cas l'approche par ML donne plusieurs solutions qui peuvent être très sensibles à des perturbations des données. Dans le cas où le problème possède plus d'une solution, la solution par ML est elle-même ambiguë. Il est alors nécessaire d'ajouter une hypothèse supplémentaire pour revenir à un problème à une solution.
+	
+	Des hypothèses supplémentaires peuvent être ajoutées à la vraisemblance pour améliorer le conditionnement ou désambiguïser la solution du problème. Le modèle est alors un compromis entre vraisemblance et l'a priori sur la solution. Admettons que le biais de la solution par maximum de vraisemblance est nul mais que la variance élevée du fait d'un mauvais conditionnement du problème. Ce type de solution n'est pas souhaitée car en présence de bruit sur les données l'estimation sera de mauvaise qualité. L'ajout de l'a priori peut améliorer le conditionnement et ainsi réduire la variance de la solution mais introduit un biais sur la solution. Il est donc important d'équilibrer le terme d'attache aux données et le terme de régularisation. Un problème sous-régularisé sera bruité et ambigu, un problème sur-régularisé sera trop éloigné des données. Ce problème est connu sous le nom de compromis Biais/Variance.
+
+%Classiquement l’équilibre entre les termes est paramétré par un facteur $\lambda$ devant le terme de régularisation
+%\begin{equation}
+%E(\boldsymbol{l}) = \sum_{i \in \boldsymbol{I}}{Data(l_i)} + \lambda \sum_{(i,j,...) \in \boldsymbol{N}}{Prior(l_i,l_j,...)}
+%\label{eq:energy_generic2}
+%\end{equation}
+%lorsque $\lambda=0$, le problème revient à un maximum de vraisemblance.
+
+\subsubsection{Maximum a posteriori (MAP)}
+
+Soit $\mathbb{P}(\boldsymbol{\theta})$ la probabilité a priori de la solution. La probabilité a posteriori de la solution est donné par la formule de Bayes,
+\begin{equation}
+\mathbb{P}(\boldsymbol{\theta}|\boldsymbol{\omega}) = \frac{\mathbb{P}(\boldsymbol{\omega}|\boldsymbol{\theta})\mathbb{P}(\boldsymbol{\theta})}{\mathbb{P}(\boldsymbol{\omega})}
+\end{equation}
+où $p(x)$ la probabilité a priori de la solution, $\mathbb{P}(\omega)$ la probabilité a priori des données, elle est aussi appelée "évidence" et $\mathbb{P}(y|\theta)$ la vraisemblance. On définit la solution du problème comme le maximum de la probabilité a posteriori (MAP)
+\begin{equation}
+\hat{\boldsymbol{\theta}}_{MAP} =  \argmax_{\boldsymbol{\theta}}{ \frac{\mathbb{P}(\boldsymbol{\omega}|\boldsymbol{\theta})\mathbb{P}(\boldsymbol{\theta})}{\mathbb{P}(\boldsymbol{\omega})}}
+\end{equation}
+L'a priori sur la solution permet de lever les ambiguïtés, de gérer l'aspect mal-posé du problème et d'améliorer le conditionnement du problème. Pour des raisons pratiques, on travaille sur le $-\text{log}$ de la probabilité, ainsi la maximisation d'un produit de termes devient la minimisation d'une somme de termes. Comme l'évidence ne dépend pas de la solution le problème revient à minimiser l’énergie suivante :
+\begin{equation}
+E(\boldsymbol{\theta}) = Data(\boldsymbol{\theta}) + Prior(\boldsymbol{\theta})
+\end{equation}
+où $Data$ est le terme d'attache aux données qui traduit la concordance entre la solution et les données, et $Prior$ le terme d'a priori sur la solution aussi appelé terme de régularisation.
+
+%	Reprenons l’exemple de la reconstruction stéréoscopique binoculaire, la solution $\boldsymbol{l}$ est un vecteur qui représente une image de taille $I$ dont chaque pixel est associé à un label discret $l$ de disparité. C'est ce qu'on appelle un problème multi-label. Soit $\boldsymbol{I}$ l'ensemble des pixel de l'image et $\boldsymbol{N}$ l'ensemble des voisinages pris en compte dans l'a priori, en prenant l'hypothèse d'indépendance de la solution l’énergie est de la forme :
+%\begin{equation}
+%E(\boldsymbol{l}) = \sum_{i \in \boldsymbol{I}}{Data(l_i)} + \sum_{(i,j,...) \in \boldsymbol{N}}{Prior(l_i,l_j,...)}
+%\label{eq:energy_generic}
+%\end{equation}
+%La régularisation possède un ordre, l’ordre est donné par le nombre maximal de paramètre entrant en jeu dans la fonction $Prior$ moins 1. Ainsi, une régularisation qui consiste un biais sur la valeur des paramètres est une régularisation d'ordre 0. Une régularisation qui vise à minimiser la dérivé peut être écrite en fonction de deux paramètres, il s'agit donc d'une régularisation d'ordre 1. 
+
+
+
+%\subsection{L'erreur de modèle}
+%
+%	
+%	Considérons deux ensembles : les modèles qui décrivent parfaitement un processus et les modèles que l'on sait optimiser.
+%	
+%	% D'un coté la description précise du processus avec la prise en compte des perturbations donne lieu à des modèle raffinés qui sont souvent très difficiles à optimiser, de l'autre coté, les modèles que l'on sait optimiser sont souvent très simples et on donc ont peu de chance de décrire parfaitement un phénomène complexe.
+%
+%
+%Compromis entre modélisation du phénomène et robustesses aux perturbations. (compromis biais/variance). Il est raisonnable de croire qu'il existe une erreur de modèle, même très fiable, sur le résultat.
+%Compromis entre description du phénomène et capacité d'optimisation. Cela amène à plusieurs approches.
+%
+%\subsection{L'erreur d'optimisation}
+
+%\subsection{Exemples de problèmes images}
+%
+%\subsubsection{Segmentation d'image} 
+%
+%\subsubsection{Dé-bruitage}
+%
+%\subsubsection{Dé-convolution}
+
+\subsection{Les sources d'erreur}
+
+Les erreurs peuvent être classé en trois catégories
+\begin{itemize}
+\item l'erreur aléatoire
+\item l'erreur de modèle
+\item l'erreur d'optimisation
+\end{itemize}
+
+L'erreur aléatoire est liée à l'erreur liée au bruit sur les données. Si les modèles peuvent prendre en compte ces perturbation aléatoire sur signal, la plupart du temps une partie de cette erreur se retrouve dans la solution estimée. L'erreur de modèle est liée à la validité des hypothèses qui ont permis d'établir le modèle. L'erreur d'optimisation est introduite comme la solution estimée est optimale.
+
+\subsubsection{Erreur sur le modèle des données}
+
+\paragraph*{Données manquantes}
+interpolation, extrapolation.
+dé-floutage : perte des hautes fréquences
+stéréoscopie : partie cachée
+
+mauvaise compression
+
+
+\subsubsection{Erreur liée aux perturbations sur les données}
+
+Les données peuvent être affectée par des perturbations
+systématiques
+aléatoire
+accidentelle
+
+
+\subsubsection{Erreur sur la régularisation}
+
+
+
+
+\subsubsection{Erreur d'optimisation}
+	L'erreur d'optimisation peut être écartée en choisissant des modèles pour lequel il existe des méthodes optimales. Cependant, cela pose une forte contrainte sur le modèle. de sorte que nous pouvons être amenés à préférer des méthodes de résolution approchée. Certaines de ces méthodes possèdent des garanties en terme biais par rapport à la solution optimale, d'autres sont considérées comme des bonnes approximations de manière empirique.
+	
+	Il existe des cas où l'erreur d'optimisation est recherchée. Il s'agit des cas où la solution approchée est préférée à la solution optimale. La non-optimalité de la solution est alors une forme de régularisation implicite. L'erreur d'optimisation ne peut être recherchée que dans l'éventualité où elle permet de compenser une autre erreur. Le plus souvent, il s'agit de compenser une erreur de modèle. Dans ce cas, si ce modèle permet d'obtenir une bonne estimation de la solution, il ne pourra être interprété comme un modèle qui décrit le phénomène.
+	
+	Complexité des méthodes d'optimisation
+	
+	L'utilisation de méthode non-optimale étant très fréquent. Elle peut être motivée par une impossibilité à optimiser le problème, ou à des considération de complexité et de temps de calcul. Cela limite l'interprétation, en terme de description des phénomènes, des modèles mis en ouvre dans la littérature.
+
+
+
+
+
+
+\paragraph*{Pertinence du critère à optimiser}
+rien de garanti que le MAP est le bon critère, d'autre critères existent. Il n'y a pas de consensus sur le sujet.
+
+\subsubsection{Effet conjugué des sources d'erreur}
+En principe pour étudier chacune de ces sources d'erreur il faut être capable de les isoler.
+
+
+\section{Décomposition d'une chaîne de traitement en sous-problèmes image}
+
+
+\subsection{Désinscription des données}
+
+\subsubsection{Quelle information est continue dans une image ?}
+
+
+Notre entrée est une séquence d'image obtenu par une acquisition mobile terrestre.
+
+
+% KITTI
+
+
+
+\subsection{Étalonnage}
+
+\subsubsection{Orientation interne}
+
+\subsubsection{Orientation relative}
+
+\subsubsection{Orientation absolue}
+
+\subsection{Reconstruction 3D}
+
+\subsubsection{Reconstruction monoscopique}
+
+\subsubsection{Reconstruction stéréoscopique}
+
+\subsubsection{Reconstruction multi-image}
+
+\subsection{Fusion de reconstruction}
+
+Mise en correspondance
+
+Détection de changement
+
+\section{Modélisation des probabilités}
+
+\subsection{Fonctions d'attache aux données}
+
+\subsection{Fonctions de régularisation}
+
+%\bibliographystyle{unsrt}
+\bibliographystyle{apalike-fr}
+\bibliography{../bibliography/Bib_0}
+
+
+%----------------------------------------------------------------------------------------
+\end{document}
+%----------------------------------------------------------------------------------------

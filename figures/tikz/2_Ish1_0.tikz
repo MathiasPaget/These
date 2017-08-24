@@ -1,0 +1,121 @@
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3.2cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt}]
+  
+  	\node[main node] (10) {$\mathcal{T}$};
+  	
+  	\node[main node] (8) [below left of=10] {$\mathcal{X}^p_4$};
+  	\node[main node] (7) [below of=8] {$\mathcal{X}^q_3$};
+  	\node[main node] (6) [below of=7] {$\mathcal{X}^q_2$};
+  	\node[main node] (5) [below of=6] {$\mathcal{X}^q_1$};  	
+  	
+  	\node[main node] (4) [left of=8] {$\mathcal{X}^p_4$};
+  	\node[main node] (3) [below of=4] {$\mathcal{X}^p_3$};
+  	\node[main node] (2) [below of=3] {$\mathcal{X}^p_2$};
+  	\node[main node] (1) [below of=2] {$\mathcal{X}^p_1$};
+  	
+  	\node[main node] (14) [below right of=10] {$\mathcal{X}^r_4$};
+  	\node[main node] (13) [below of=14] {$\mathcal{X}^r_3$};
+  	\node[main node] (12) [below of=13] {$\mathcal{X}^r_2$};
+  	\node[main node] (11) [below of=12] {$\mathcal{X}^r_1$};
+  	
+  	\node[main node] (18) [right of=14] {$\mathcal{X}^s_4$};
+  	\node[main node] (17) [below of=18] {$\mathcal{X}^s_3$};
+  	\node[main node] (16) [below of=17] {$\mathcal{X}^s_2$};
+  	\node[main node] (15) [below of=16] {$\mathcal{X}^s_1$}; 
+  	
+  	\node[main node] (9) [below right of=5] {$\mathcal{S}$};
+  	
+  	\path[->,every node/.style={font=\sffamily\Large},teal]
+  	(9) edge node [below left] {} (1)
+  	(1) edge [bend right=10] node[left] {} (2)
+  	(2) edge [bend right=10] node[left] {} (3)
+  	(3) edge [bend right=10] node[left] {} (4)
+  	(4) edge node [above left] {} (10)
+  	
+  	(9) edge node [below right] {} (5)
+  	(5) edge [bend right=10] node[right] {} (6)
+  	(6) edge [bend right=10] node[right] {} (7)
+  	(7) edge [bend right=10] node[right] {} (8)
+  	(8) edge node [above right] {} (10)
+  	
+  	(9) edge node [below left] {} (11)
+  	(11) edge [bend right=10] node[left] {} (12)
+  	(12) edge [bend right=10] node[left] {} (13)
+  	(13) edge [bend right=10] node[left] {} (14)
+  	(14) edge node [above left] {} (10)
+  	
+  	(9) edge node [below right] {} (15)
+  	(15) edge [bend right=10] node[right] {} (16)
+  	(16) edge [bend right=10] node[right] {} (17)
+  	(17) edge [bend right=10] node[right] {} (18)
+  	(18) edge node [above right] {} (10);
+  	
+  	\path[<-,every node/.style={font=\sffamily\Large},darkgray!90]
+  	(1) edge [bend left=10] node[left] {} (2)
+  	(2) edge [bend left=10] node[left] {} (3)
+  	(3) edge [bend left=10] node[left] {} (4)
+  	
+  	(5) edge [bend left=10] node[right] {} (6)
+  	(6) edge [bend left=10] node[right] {} (7)
+  	(7) edge [bend left=10] node[right] {} (8)
+  	
+  	(11) edge [bend left=10] node[left] {} (12)
+  	(12) edge [bend left=10] node[left] {} (13)
+  	(13) edge [bend left=10] node[left] {} (14)
+
+  	(15) edge [bend left=10] node[right] {} (16)
+  	(16) edge [bend left=10] node[right] {} (17)
+  	(17) edge [bend left=10] node[right] {} (18);  	
+
+  	\path[<->,every node/.style={font=\sffamily\small},red!70]
+  	(1) edge node [left] {} (5)
+  	(2) edge node [left] {} (6)
+    (3) edge node [left] {} (7)
+    (4) edge node [left] {} (8)
+  	(1) edge node [left] {} (6)
+  	(2) edge node [left] {} (5)
+  	(2) edge node [left] {} (7)
+  	(3) edge node [left] {} (6)
+  	(3) edge node [left] {} (8)
+  	(4) edge node [left] {} (7)
+  	(1) edge node [left] {} (7)
+  	(2) edge node [left] {} (8)
+  	(3) edge node [left] {} (5)
+  	(4) edge node [left] {} (6)
+  	(1) edge node [left] {} (8)
+  	(4) edge node [left] {} (5)
+  	
+  	(11) edge node [left] {} (15)
+  	(12) edge node [left] {} (16)
+    (13) edge node [left] {} (17)
+    (14) edge node [left] {} (18)
+  	(11) edge node [left] {} (16)
+  	(12) edge node [left] {} (15)
+  	(12) edge node [left] {} (17)
+  	(13) edge node [left] {} (16)
+  	(13) edge node [left] {} (18)
+  	(14) edge node [left] {} (17)
+  	(11) edge node [left] {} (17)
+  	(12) edge node [left] {} (18)
+  	(13) edge node [left] {} (15)
+  	(14) edge node [left] {} (16)
+  	(11) edge node [left] {} (18)
+  	(14) edge node [left] {} (15)
+  	
+  	(11) edge node [left] {} (5)
+  	(12) edge node [left] {} (6)
+    (13) edge node [left] {} (7)
+    (14) edge node [left] {} (8)
+  	(11) edge node [left] {} (6)
+  	(12) edge node [left] {} (5)
+  	(12) edge node [left] {} (7)
+  	(13) edge node [left] {} (6)
+  	(13) edge node [left] {} (8)
+  	(14) edge node [left] {} (7)
+  	(11) edge node [left] {} (7)
+  	(12) edge node [left] {} (8)
+  	(13) edge node [left] {} (5)
+  	(14) edge node [left] {} (6)
+  	(11) edge node [left] {} (8)
+  	(14) edge node [left] {} (5);
+\end{tikzpicture}

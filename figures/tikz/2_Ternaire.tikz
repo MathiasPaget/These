@@ -1,0 +1,30 @@
+\begin{tikzpicture}[->,>=stealth',shorten >= 0.5pt,auto,node distance=3.2cm,
+  thick,main node/.style={circle,fill=blue!10,draw,minimum size=25pt}]
+  
+  	\node[main node] at(0,0) (6) {$\mathcal{T}$};
+  	\node[main node] (2) at(-4,-2) {$\mathcal{X}^{+}_p$};
+  	\node[main node] (4) at(4,-2) {$\mathcal{X}^{+}_q$};
+  	\node[main node] (1) at(-4,-6) {$\mathcal{X}^{-}_p$};
+  	\node[main node] (3) at(4,-6) {$\mathcal{X}^{-}_q$};
+  	\node[main node] (5) at(0,-8) {$\mathcal{S}$};
+  	
+  	\path[->,every node/.style={font=\sffamily\Large},teal] 	
+	(5) edge node [below left] {$D(l_x^-)+R(l_x^-,l_y^-)$} (1)
+  	(5) edge node [below right] {$D(l_y^-)+R(l_x^-,l_y^+)$} (3)
+  	(1) edge [bend left=10] node [left] {$D(l_x^0)+R(l_x^0,l_y^-)$} (2) 
+  	(3) edge [bend right=10] node [right] {$D(l_y^0)+R(l_x^-,l_y^0)$} (4)
+  	(2)	edge node [above left] {$D(l_x^+)+R(l_x^+,l_y^-)$} (6)
+  	(4) edge node [above right] {$D(l_y^+)+R(l_x^-,l_y^+)$} (6);
+  		
+  	
+  	\path[<-,every node/.style={font=\sffamily\Large},darkgray!90]
+  	(2) edge [bend left=10] node [above right] {$\infty$} (1)
+  	(4) edge [bend right=10] node [above left] {$\infty$} (3);  	
+
+  	\path[->,every node/.style={font=\sffamily\small},red!70]
+  	(1) edge node [below] {\small $\begin{aligned}R(l_x^-,l_y^+)+R(l_x^0,l_y^0) \\ -R(l_x^-,l_y^0)-R(l_x^0,l_y^+) \end{aligned}$} (3)
+  	    edge [bend left=25] node [below=5, right] {\small $\begin{aligned}R(l_x^+,l_y^+)+R(l_x^0,l_y^0) \\ -R(l_x^0,l_y^+)-R(l_x^0,l_y^+) \end{aligned}$} (4)
+  	(2)	edge [bend right=25]  node [above=5,right] {\small $\begin{aligned}R(l_x^0,l_y^0)+R(l_x^-,l_y^-) \\ -R(l_x^-,l_y^0)-R(l_x^0,l_y^-) \end{aligned}$} (3)
+  		edge node [above] {\small $\begin{aligned}R(l_x^+,l_y^+)+R(l_x^0,l_y^-) \\ -R(l_x^0,l_y^-)-R(l_x^+,l_y^0) \end{aligned}$} (4);
+  		
+\end{tikzpicture}

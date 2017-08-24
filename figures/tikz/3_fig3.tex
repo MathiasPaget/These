@@ -1,0 +1,182 @@
+%\draw[-] (\k) edge (\b);
+
+\begin{tikzpicture}
+
+\def \ST {0}
+\def \UJ {0}
+\def \W {4}
+
+
+\tikzset{ActNode/.style={shape=circle,draw, fill=teal!70}}
+\tikzset{CenterNode/.style={shape=circle,draw, fill=red!70}}
+\tikzset{AddLink/.style={color=red!70}}
+
+\tikzset{BackFig/.style={color=black!50}}
+
+\ifthenelse{\ST=1}{
+	\pgfmathtruncatemacro{\UJ}{1}
+}
+
+\pgfmathsetmacro{\Winmax}{\W*2}
+\pgfmathsetmacro{\Winlen}{\Winmax+1}
+
+\foreach \i in {0,...,\Winmax}{
+	\foreach \j in {0,...,\Winmax}{
+
+		% / d f
+		% b c e
+		% g a k
+	
+		\pgfmathtruncatemacro{\k}{\i+\j*\Winlen}
+		\pgfmathtruncatemacro{\a}{\k-1}
+		\pgfmathtruncatemacro{\b}{\k-2-\Winlen}
+		\pgfmathtruncatemacro{\c}{\k-1-\Winlen}
+		\pgfmathtruncatemacro{\d}{\k-1-2*\Winlen}
+		\pgfmathtruncatemacro{\e}{\k-\Winlen}
+		\pgfmathtruncatemacro{\f}{\k-2*\Winlen}
+		\pgfmathtruncatemacro{\g}{\k-2}
+		
+		\node (\k) at (\i/2,-\j/2) [circle,draw] {};
+		
+		\ifthenelse{\i>0}{
+			\draw[-] (\k) edge[BackFig] (\a);
+			
+			\ifthenelse{\j>0}{
+				\draw[-] (\k) edge[BackFig] (\e);
+				
+				\ifthenelse{\UJ=1}{
+					\draw[-] (\k) edge[BackFig] (\c);
+					\draw[-] (\a) edge[BackFig] (\e);
+				}		
+				
+				\ifthenelse{\ST=1}{
+					\ifthenelse{\i>1}{
+						\draw[-] (\k) edge[BackFig] (\b);
+						\draw[-] (\e) edge[BackFig] (\g);				
+					}
+
+					\ifthenelse{\j>1}{
+						\draw[-] (\k) edge[BackFig] (\d);
+						\draw[-] (\a) edge[BackFig] (\f);				
+					}
+				
+				}
+			}
+		}
+		{
+			\ifthenelse{\j>0}{
+				\draw[-] (\k) edge[BackFig] (\e);
+			}
+			
+		}
+		
+	}
+}
+
+
+
+% inpaint
+\foreach \l in {1,...,\W}{
+	
+	% n o p
+	% q m r
+	% s t u
+	\pgfmathtruncatemacro{\m}{\W+\W*\Winlen}
+	\pgfmathtruncatemacro{\z}{\l-1}
+	
+	\pgfmathtruncatemacro{\x}{\W-\l}
+	\pgfmathtruncatemacro{\y}{\W+\l}
+	
+	\pgfmathtruncatemacro{\o}{\m-\l*\Winlen}
+	\pgfmathtruncatemacro{\q}{\m-\l}
+	\pgfmathtruncatemacro{\r}{\m+\l}
+	\pgfmathtruncatemacro{\t}{\m+\l*\Winlen}
+	
+	\pgfmathtruncatemacro{\oi}{\m-\z*\Winlen}
+	\pgfmathtruncatemacro{\qi}{\m-\z}
+	\pgfmathtruncatemacro{\ri}{\m+\z}
+	\pgfmathtruncatemacro{\ti}{\m+\z*\Winlen}	
+	
+	
+	\pgfmathtruncatemacro{\n}{\m-\l-\l*\Winlen}
+	\pgfmathtruncatemacro{\p}{\m+\l-\l*\Winlen}
+	\pgfmathtruncatemacro{\s}{\m-\l+\l*\Winlen}
+	\pgfmathtruncatemacro{\u}{\m+\l+\l*\Winlen}
+	
+	\pgfmathtruncatemacro{\ni}{\m-\z-\z*\Winlen}
+	\pgfmathtruncatemacro{\pi}{\m+\z-\z*\Winlen}
+	\pgfmathtruncatemacro{\si}{\m-\z+\z*\Winlen}
+	\pgfmathtruncatemacro{\ui}{\m+\z+\z*\Winlen}
+	
+	\draw (\x/2,-\W/2) node[ActNode] {};
+	\draw (\y/2,-\W/2) node[ActNode] {};
+	\draw (\W/2,-\x/2) node[ActNode] {};
+	\draw (\W/2,-\y/2) node[ActNode] {};
+	
+	\draw[->] (\o) edge[AddLink] (\oi);
+	\draw[->] (\q) edge[AddLink] (\qi);
+	\draw[->] (\r) edge[AddLink] (\ri);
+	\draw[->] (\t) edge[AddLink] (\ti);
+	
+	
+	
+	\ifthenelse{\UJ=1}{
+		\draw (\x/2,-\x/2) node[ActNode] {};
+		\draw (\y/2,-\x/2) node[ActNode] {};
+		\draw (\x/2,-\y/2) node[ActNode] {};
+		\draw (\y/2,-\y/2) node[ActNode] {};
+		
+		\draw[->] (\n) edge[AddLink] (\ni);
+		\draw[->] (\p) edge[AddLink] (\pi);
+		\draw[->] (\s) edge[AddLink] (\si);
+		\draw[->] (\u) edge[AddLink] (\ui);
+	}
+	
+	\ifthenelse{\ST=1}{
+		\draw[->] (21) edge[AddLink] (40);
+		\draw[->] (29) edge[AddLink] (40);
+		\draw[->] (23) edge[AddLink] (40);
+		\draw[->] (33) edge[AddLink] (40);
+		\draw[->] (51) edge[AddLink] (40);
+		\draw[->] (59) edge[AddLink] (40);
+		\draw[->] (57) edge[AddLink] (40);
+		\draw[->] (47) edge[AddLink] (40);
+	
+		\draw[->] (2) edge[AddLink] (21);
+		\draw[->] (6) edge[AddLink] (23);
+		\draw[->] (26) edge[AddLink] (33);
+		\draw[->] (62) edge[AddLink] (51);
+		\draw[->] (78) edge[AddLink] (59);
+		\draw[->] (74) edge[AddLink] (57);
+		\draw[->] (54) edge[AddLink] (47);
+		\draw[->] (29) edge[AddLink] (18);	
+
+
+		\draw (3/2,-2/2) node[ActNode] {};
+		\draw (5/2,-2/2) node[ActNode] {};
+		\draw (3/2,-6/2) node[ActNode] {};
+		\draw (5/2,-6/2) node[ActNode] {};
+		\draw (2/2,-3/2) node[ActNode] {};
+		\draw (2/2,-5/2) node[ActNode] {};
+		\draw (6/2,-3/2) node[ActNode] {};
+		\draw (6/2,-5/2) node[ActNode] {};
+		
+		\draw (2/2,-0/2) node[ActNode] {};
+		\draw (6/2,-0/2) node[ActNode] {};
+		\draw (2/2,-8/2) node[ActNode] {};
+		\draw (6/2,-8/2) node[ActNode] {};
+		\draw (0/2,-2/2) node[ActNode] {};
+		\draw (0/2,-6/2) node[ActNode] {};
+		\draw (8/2,-2/2) node[ActNode] {};
+		\draw (8/2,-6/2) node[ActNode] {};				
+		
+	}
+	
+	
+	
+	
+}
+
+
+
+\end{tikzpicture}

@@ -1,0 +1,87 @@
+%% ==================================================================
+%%  Reconstruction 3D de défauts par imagerie électromagnétique basse fréquence et
+%%  algorithmes génétiques
+%%  Rapport de stage
+%%  Florentin Delaine
+%%  florentin.delaine@ens-cachan.fr
+%% ==================================================================
+\documentclass{../MyReportClass}
+%	\RequirePackage{pslatex}
+	\RequirePackage[utf8]{inputenc}  
+	\RequirePackage[T1]{fontenc}
+	\usepackage{float} 
+	\usepackage{placeins} 
+	\usepackage[update,prepend]{epstopdf} % permet de ne convertir qu'une fois les eps en pdf (gain de temps compil)
+\hypersetup{%
+	pdftitle    = {Thèse de doctorat},
+	pdfsubject  = {PhD Thesis},
+	pdfauthor   = {Mathias Paget},
+	pdfkeywords = {Lala},
+}
+%% ==================================================================
+%\usepackage{draftwatermark}
+%\SetWatermarkLightness{0.8}
+%\SetWatermarkAngle{25}
+%\SetWatermarkScale{2}
+%\SetWatermarkFontSize{2cm}
+%\SetWatermarkText{Document de travail}
+
+%%% Package supplementaire
+
+
+% Titre de bas de page
+%\foottitle{r}
+
+% Où trouver les figures
+\graphicspath{{../figures/}}
+
+% Style de biblio
+%\bibliographystyle{apalike-fr}
+
+\makeindex
+
+\parskip 6pt
+
+%----------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------
+
+%\subfile{../subfiles/cover.tex}
+
+%\subfile{../subfiles/thanks.tex}
+
+%----------------------------------------------------------------------------------------
+\frontmatter
+%----------------------------------------------------------------------------------------
+
+\dominitoc
+\tableofcontents
+\listoffigures
+\listoftables
+
+%----------------------------------------------------------------------------------------
+\mainmatter
+%----------------------------------------------------------------------------------------
+\subfile{../subfiles/0_Intro.tex}
+\subfile{../subfiles/1_GC.tex}
+\subfile{../subfiles/2_GC.tex}
+\subfile{../subfiles/3_Stereo.tex}
+\subfile{../subfiles/4_Index.tex}
+\subfile{../subfiles/5_Chain.tex}
+
+\clearpage
+
+%----------------------------------------------------------------------------------------
+%\bibliographystyle{unsrt}
+%\bibliography{../bibliography/EddyCurrents}
+%----------------------------------------------------------------------------------------
+
+%----------------------------------------------------------------------------------------
+\appendix
+%----------------------------------------------------------------------------------------
+
+
+
+%----------------------------------------------------------------------------------------
+\end{document}
+%----------------------------------------------------------------------------------------
